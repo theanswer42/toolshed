@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forms & editing · Design guide</title>
+  <link rel="stylesheet" href="../design.css">
+  <script src="../design.js" defer></script>
+  <script src="demo.js"></script>
+</head>
+<body class="app">
+
+  <header class="app-header">
+    <a class="brand" href="index.html"><span class="brand-mark">D</span>Design guide</a>
+    <div id="flash" class="flash-region" role="status" aria-live="polite"></div>
+    <button type="button" class="ghost small" data-demo-theme title="Cycle theme: auto / light / dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg><span class="label">auto</span></button>
+  </header>
+
+  <nav class="sidenav" aria-label="Main">
+    <h2>Demo</h2>
+    <ul>
+        <li><a href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7V5h16v2M9 19h6M12 5v14"/></svg>Foundations</a></li>
+        <li><a href="shell.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/></svg>Shell & navigation</a></li>
+        <li><a href="lists.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 10v10"/></svg>Lists & data</a></li>
+        <li><a href="forms.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>Forms & editing</a></li>
+        <li><a href="feedback.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 003.4 0"/></svg>Feedback</a></li>
+    </ul>
+    <h2>Example app</h2>
+    <ul>
+      <li><a href="lists.html#table-view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 10v10"/></svg>Transactions <span class="count">214</span></a></li>
+      <li><a href="lists.html#tile-view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>Albums <span class="count">38</span></a></li>
+      <li><a href="forms.html#inline-form"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Budgets</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <div class="page">
+      <header class="page-header">
+        <div class="title-row">
+          <div>
+            <h1>Forms &amp; editing</h1>
+            <p class="subtitle">Every change is saved by an explicit button. Four ways to edit, from biggest to smallest.</p>
+          </div>
+        </div>
+      </header>
+
+      <section class="section">
+        <header><h2>1 · Form page</h2><span class="small muted">Creating or editing a whole record. Own URL, narrow card.</span></header>
+        <div class="card form-page">
+          <div class="card-header"><h2>Add account</h2></div>
+          <form class="card-body form" data-demo-submit="Account created">
+            <div class="alert danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg><div><strong>Couldn't create the account</strong><span>Fix the field below and try again.</span></div></div>
+            <div class="field">
+              <label for="name" class="required">Name</label>
+              <input id="name" name="name" value="bofa_checking" aria-invalid="true" aria-describedby="name-err">
+              <span id="name-err" class="field-error">Name is already in use.</span>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label for="type" class="required">Type</label>
+                <select id="type"><option value="">Select type…</option><option selected>bofa</option><option>amex</option><option>chase</option></select>
+              </div>
+              <div class="field">
+                <label for="opened">Opened</label>
+                <input id="opened" type="date" value="2019-04-01">
+              </div>
+            </div>
+            <div class="field">
+              <label for="desc">Description</label>
+              <input id="desc" placeholder="Bank of America Checking Account">
+              <span class="hint">Shown in lists and reports.</span>
+            </div>
+            <div class="field">
+              <label for="limit">Credit limit</label>
+              <div class="input-group"><span class="addon">$</span><input id="limit" type="number" step="0.01" placeholder="0.00"><span class="addon">USD</span></div>
+            </div>
+            <fieldset>
+              <legend>Statement format</legend>
+              <div class="field check"><input type="radio" id="f1" name="fmt" checked><label for="f1">CSV export</label></div>
+              <div class="field check"><input type="radio" id="f2" name="fmt"><label for="f2">OFX / QFX</label></div>
+            </fieldset>
+            <div class="field">
+              <label for="csv">Initial statement</label>
+              <input id="csv" type="file" accept=".csv">
+            </div>
+            <div class="field">
+              <label for="notes">Notes</label>
+              <textarea id="notes"></textarea>
+            </div>
+            <div class="field check"><input type="checkbox" id="active" checked><label for="active">Include in reports</label></div>
+            <div class="form-actions">
+              <button class="primary" type="submit">Create account</button>
+              <a class="button ghost" href="#">Cancel</a>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section class="section" id="inline-form">
+        <header><h2>2 · Inline form</h2><span class="small muted">A quick add of a few fields, on one line above the list it adds to.</span></header>
+        <form class="inline-form" data-demo-submit="Budget created">
+          <div class="field"><label for="b-cat">Category</label><select id="b-cat"><option>Groceries</option><option>Dining</option><option>Fuel</option><option>Shopping</option><option>Utilities</option><option>Travel</option></select></div>
+          <div class="field narrow"><label for="b-period">Period</label><select id="b-period"><option>monthly</option><option>yearly</option></select></div>
+          <div class="field narrow"><label for="b-amt">Amount</label><div class="input-group"><span class="addon">$</span><input id="b-amt" type="number" step="0.01" placeholder="0.00"></div></div>
+          <button class="primary" type="submit">Add budget</button>
+          <button type="button" class="ghost">Cancel</button>
+        </form>
+      </section>
+
+      <section class="section">
+        <header><h2>3 · In-place edit</h2><span class="small muted">One value at a time. The cell turns into an input with Save / Cancel. Delete asks first.</span></header>
+        <div class="card scroll-x">
+          <table>
+            <thead><tr><th>Category</th><th>Period</th><th class="num">Amount</th><th class="actions-cell"><span class="visually-hidden">Actions</span></th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="primary-cell">Groceries</td><td>monthly</td>
+                <td class="num"><span data-display>$800.00</span>
+                  <form class="edit-in-place" data-editor hidden>
+                    <div class="input-group"><span class="addon">$</span><input type="number" step="0.01" min="0.01" value="800.00" aria-label="Amount" style="width:6rem"></div>
+                    <button class="primary" data-demo-edit-save>Save</button>
+                    <button type="button" data-demo-edit-cancel>Cancel</button>
+                  </form>
+                </td>
+                <td class="actions-cell"><div class="cluster gap-1">
+                  <button class="ghost icon" data-demo-edit aria-label="Edit amount"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></button>
+                  <button class="ghost icon danger-text" data-confirm="The Groceries budget will be removed. Transactions are not affected." data-confirm-title="Delete budget?" data-confirm-label="Delete" data-demo-delete="Budget deleted" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+                </div></td>
+              </tr>
+              <tr>
+                <td class="primary-cell">Dining</td><td>monthly</td>
+                <td class="num"><span data-display>$300.00</span>
+                  <form class="edit-in-place" data-editor hidden>
+                    <div class="input-group"><span class="addon">$</span><input type="number" step="0.01" min="0.01" value="300.00" aria-label="Amount" style="width:6rem"></div>
+                    <button class="primary" data-demo-edit-save>Save</button>
+                    <button type="button" data-demo-edit-cancel>Cancel</button>
+                  </form>
+                </td>
+                <td class="actions-cell"><div class="cluster gap-1">
+                  <button class="ghost icon" data-demo-edit aria-label="Edit amount"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></button>
+                  <button class="ghost icon danger-text" data-confirm="The Dining budget will be removed. Transactions are not affected." data-confirm-title="Delete budget?" data-confirm-label="Delete" data-demo-delete="Budget deleted" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+                </div></td>
+              </tr>
+              <tr>
+                <td class="primary-cell">Travel</td><td>yearly</td>
+                <td class="num"><span data-display>$4,000.00</span>
+                  <form class="edit-in-place" data-editor hidden>
+                    <div class="input-group"><span class="addon">$</span><input type="number" step="0.01" min="0.01" value="4000.00" aria-label="Amount" style="width:6rem"></div>
+                    <button class="primary" data-demo-edit-save>Save</button>
+                    <button type="button" data-demo-edit-cancel>Cancel</button>
+                  </form>
+                </td>
+                <td class="actions-cell"><div class="cluster gap-1">
+                  <button class="ghost icon" data-demo-edit aria-label="Edit amount"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></button>
+                  <button class="ghost icon danger-text" data-confirm="The Travel budget will be removed. Transactions are not affected." data-confirm-title="Delete budget?" data-confirm-label="Delete" data-demo-delete="Budget deleted" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+                </div></td>
+              </tr>
+              <tr>
+                <td class="primary-cell">Utilities</td><td>monthly</td>
+                <td class="num"><span data-display>$250.00</span>
+                  <form class="edit-in-place" data-editor hidden>
+                    <div class="input-group"><span class="addon">$</span><input type="number" step="0.01" min="0.01" value="250.00" aria-label="Amount" style="width:6rem"></div>
+                    <button class="primary" data-demo-edit-save>Save</button>
+                    <button type="button" data-demo-edit-cancel>Cancel</button>
+                  </form>
+                </td>
+                <td class="actions-cell"><div class="cluster gap-1">
+                  <button class="ghost icon" data-demo-edit aria-label="Edit amount"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></button>
+                  <button class="ghost icon danger-text" data-confirm="The Utilities budget will be removed. Transactions are not affected." data-confirm-title="Delete budget?" data-confirm-label="Delete" data-demo-delete="Budget deleted" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+                </div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <header><h2>4 · Bulk edit</h2><span class="small muted">Many rows, one save. The save button lives in a sticky footer bar.</span></header>
+        <div class="card card-body stack gap-2">
+          <div class="split"><span class="medium">Reviewing bofa_checking_2026-11.csv</span><span class="small muted num">29 of 41 reviewed</span></div>
+          <progress value="29" max="41"></progress>
+        </div>
+        <div class="alert warning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg><div>Auto-categorization is unavailable for this batch. Please categorize manually.</div></div>
+        <form class="stack" data-demo-submit="Saved 5 transactions">
+          <div class="card scroll-x">
+            <table>
+              <thead><tr><th>Date</th><th>Description</th><th class="num">Amount</th><th>Suggested</th><th>Category</th><th>Merchant</th></tr></thead>
+              <tbody>
+              <tr><td class="nowrap muted">2026-11-21</td><td class="truncate" style="max-width:14rem">TRADER JOES #552</td><td class="num">$84.12</td>
+                <td class="small"><em class="muted">Groceries</em></td>
+                <td><select aria-label="Category"><option value="">— None —</option><option selected>Groceries</option><option>Dining</option><option>Fuel</option><option>Shopping</option><option>Utilities</option><option>Travel</option></select></td>
+                <td><input type="text" value="Trader Joe's" aria-label="Merchant" style="min-width:9rem"></td></tr>
+              <tr><td class="nowrap muted">2026-11-20</td><td class="truncate" style="max-width:14rem">SQ *BLUE BOTTLE COF</td><td class="num">$6.50</td>
+                <td class="small"><em class="muted">Dining</em></td>
+                <td><select aria-label="Category"><option value="">— None —</option><option>Groceries</option><option selected>Dining</option><option>Fuel</option><option>Shopping</option><option>Utilities</option><option>Travel</option></select></td>
+                <td><input type="text" value="Blue Bottle" aria-label="Merchant" style="min-width:9rem"></td></tr>
+              <tr><td class="nowrap muted">2026-11-20</td><td class="truncate" style="max-width:14rem">AMZN MKTP US*2K4</td><td class="num">$31.99</td>
+                <td class="small"><em class="muted">Shopping</em></td>
+                <td><select aria-label="Category"><option value="">— None —</option><option>Groceries</option><option>Dining</option><option>Fuel</option><option selected>Shopping</option><option>Utilities</option><option>Travel</option></select></td>
+                <td><input type="text" value="Amazon" aria-label="Merchant" style="min-width:9rem"></td></tr>
+              <tr><td class="nowrap muted">2026-11-19</td><td class="truncate" style="max-width:14rem">CHECKCARD 1119 XYZ LLC</td><td class="num">$120.00</td>
+                <td class="small"><em class="muted">—</em></td>
+                <td><select aria-label="Category" aria-invalid="true"><option value="">— None —</option><option>Groceries</option><option>Dining</option><option>Fuel</option><option>Shopping</option><option>Utilities</option><option>Travel</option></select><div class="field-error">Pick a category</div></td>
+                <td><input type="text" value="" aria-label="Merchant" style="min-width:9rem"></td></tr>
+              <tr><td class="nowrap muted">2026-11-18</td><td class="truncate" style="max-width:14rem">SHELL OIL 5744</td><td class="num">$52.30</td>
+                <td class="small"><em class="muted">Fuel</em></td>
+                <td><select aria-label="Category"><option value="">— None —</option><option>Groceries</option><option>Dining</option><option selected>Fuel</option><option>Shopping</option><option>Utilities</option><option>Travel</option></select></td>
+                <td><input type="text" value="Shell" aria-label="Merchant" style="min-width:9rem"></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="footer-bar sticky">
+            <span class="info">5 transactions in this batch · 12 remaining</span>
+            <div class="actions"><button type="button" class="ghost">Skip batch</button><button class="primary" type="submit">Save and continue<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button></div>
+          </div>
+        </form>
+      </section>
+
+    </div>
+  </main>
+
+</body>
+</html>
