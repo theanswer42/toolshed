@@ -57,8 +57,9 @@ COPY claude/ /etc/sandbox/claude/
 RUN rm /etc/sandbox/claude/settings.json
 
 COPY image/gitconfig /etc/gitconfig
+COPY image/profile.sh /etc/profile.d/sandbox.sh
 COPY image/git-credential-sandbox image/gh image/entrypoint /usr/local/bin/
-RUN chmod -R a+rX,go-w /etc/claude-code /etc/sandbox /etc/gitconfig \
+RUN chmod -R a+rX,go-w /etc/claude-code /etc/sandbox /etc/gitconfig /etc/profile.d/sandbox.sh \
  && chmod 0755 /usr/local/bin/git-credential-sandbox /usr/local/bin/gh /usr/local/bin/entrypoint
 
 RUN useradd --uid 10001 --create-home --shell /bin/bash agent \
@@ -75,6 +76,7 @@ ENV HOME=/home/agent \
     CLAUDE_CODE_DISABLE_ARTIFACT=1 \
     CLAUDE_CODE_DISABLE_AUTO_MEMORY=1 \
     UV_PYTHON_INSTALL_DIR=/opt/uv/python \
+    UV_PYTHON_DOWNLOADS=never \
     UV_CACHE_DIR=/cache/uv \
     UV_LINK_MODE=copy \
     PRE_COMMIT_HOME=/cache/pre-commit \

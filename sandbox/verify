@@ -560,7 +560,9 @@ for role in implementer reviewer; do
 set -u
 echo \"@@repos \$(gh api /installation/repositories --jq '[.repositories[].full_name] | join(\",\")')\"
 echo \"@@identity \$(git config user.name) <\$(git config user.email)>\"
-echo '@@keys-begin'; $find_keys; echo '@@keys-end'
+echo '@@keys-begin'
+$find_keys
+echo '@@keys-end'
 echo \"@@token-in-clone \$(grep -rlF -f /run/secrets/github_token /work 2>/dev/null | wc -l)\"
 echo \"@@claude-in-clone \$(grep -rlF -f /run/secrets/claude_token /work 2>/dev/null | wc -l)\"
 betterleaks git --no-banner --no-color --redact /work >/dev/null 2>&1; echo \"@@betterleaks-clone \$?\"

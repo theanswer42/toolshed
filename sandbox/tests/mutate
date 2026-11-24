@@ -143,7 +143,14 @@ mut_shared-home() {
 	edit "$m/compose.yaml" '      - cache:/cache' $'      - cache:/cache\n      - home:/home/agent'
 	edit "$m/compose.yaml" $'volumes:\n  work:\n' $'volumes:\n  home:\n    name: sandbox-shared-home\n  work:\n'
 }
-mut_reviewer-write() { edit "$m/task" 'reviewer) permissions='"'"'{"contents":"read"' 'reviewer) permissions='"'"'{"contents":"write"'; }
+# The reviewer App itself only has contents read, so GitHub refuses a write
+# token for it: a second layer behind the check. To show the check bites, the
+# mutant mints the "reviewer" token with the implementer App.
+mut_reviewer-write() {
+	edit "$m/task" 'reviewer) permissions='"'"'{"contents":"read"' 'reviewer) permissions='"'"'{"contents":"write"'
+	edit "$m/task" 'if [[ $role == implementer ]]; then app_id=$IMPLEMENTER_APP_ID; else app_id=$REVIEWER_APP_ID; fi' 'app_id=$IMPLEMENTER_APP_ID'
+	edit "$m/task" 'app_key="$SECRETS_DIR/${role}_app_key"' 'app_key="$SECRETS_DIR/implementer_app_key"'
+}
 mut_no-cleanup() { edit "$m/task" '			docker volume rm "${project}_work" "${project}_cache" >/dev/null 2>&1 || true' '			:'; }
 
 all=("${mutations[@]}")
@@ -166,6 +173,7 @@ for entry in "${all[@]}"; do
 	if [[ " $failed" == *" $id "* ]]; then
 		printf 'KILLED    %-22s %-7s %s (failed: %s)\n' "$name" "$id" "$desc" "${failed% }"
 	else
+		failed=${failed% }
 		printf 'SURVIVED  %-22s %-7s %s (failed: %s)\n' "$name" "$id" "$desc" "${failed:-none}"
 		survived=$((survived + 1))
 		tail -8 <<<"$out" | while IFS= read -r l; do printf '          | %s\n' "$l"; done
