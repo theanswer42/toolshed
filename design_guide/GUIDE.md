@@ -327,10 +327,14 @@ and continue"), not "OK" or "Submit".
   dialog.
 - **Confirmation**: required for deletes and anything hard to undo. It
   isn't needed for routine saves.
-- **Loading**: htmx adds `.htmx-request` to the element making the
-  request, and buttons show a spinner in that state. For non-htmx
-  buttons, set `aria-busy="true"`. For a slow region, show
-  `.spinner` with a short label.
+- **Loading**: htmx adds `.htmx-request` to the element that issues the
+  request. A button with `hx-post` gets it itself. A `<form hx-post>`
+  gets it on the form, and the CSS then spins the form's submit buttons.
+  Either way the spinning button ignores clicks, which prevents double
+  submits. To also disable the controls, add
+  `hx-disabled-elt="find button[type=submit]"`. For non-htmx buttons,
+  set `aria-busy="true"`. For a slow region, show `.spinner` with a
+  short label.
 - **Disabled**: use `disabled` on controls, and `aria-disabled="true"`
   on links such as the pager ends. Don't hide controls that are only
   temporarily unavailable.
@@ -349,16 +353,27 @@ needs no class), `warning`, `danger`.
 
 ### Flash messages
 
-The server returns the flash out-of-band with any mutation response:
+The page renders the region once, in the app header, and it stays in
+the DOM. Mutation responses replace only its **contents**, out-of-band:
 
 ```html
-<div id="flash" class="flash-region" role="status" aria-live="polite" hx-swap-oob="outerHTML">
+<!-- in the app header, rendered with every full page -->
+<div id="flash" class="flash-region" role="status" aria-live="polite"></div>
+
+<!-- in a mutation response -->
+<div id="flash" hx-swap-oob="innerHTML">
   <div class="flash success">
     {icon}<span>Budget updated</span>
     <button type="button" class="dismiss" data-dismiss aria-label="Dismiss">×</button>
   </div>
 </div>
 ```
+
+Use `innerHTML`, not `outerHTML`. Screen readers announce changes inside
+an existing live region, but often stay silent when the whole region is
+replaced. Keep the region rendered (never `hidden` or `display: none`).
+On phones an empty region, even one holding only whitespace, adds no
+header row.
 
 Keep the message short and past tense ("Account created", "3 transactions
 skipped as duplicates"). Errors that need explanation belong in an
@@ -443,7 +458,9 @@ For arranging things inside a page, reach for these before writing CSS:
 | `.grid` | Responsive equal columns, min width `--min` (16rem) | default 16px |
 | `.with-aside` | Main column plus a side column that wraps under on narrow screens | default 24px |
 
-Set the gap with `.gap-1` … `.gap-6`, or `style="--gap: var(--space-2)"`.
+Set the gap with `.gap-1` … `.gap-6`, or `style="--gap: var(--space-2)"`,
+on the primitive itself. Each primitive sets its own default, so a gap
+set on an outer container never leaks into nested ones.
 Utilities like `.muted`, `.small`, `.num`, `.mono`, `.truncate`,
 `.nowrap` and `.visually-hidden` are for one-off text tweaks. If you're
 stacking several utilities on one element, it probably wants to be a

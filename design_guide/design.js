@@ -1,6 +1,6 @@
 /*
  * design.js — optional behaviour for design.css
- * version: 0.1.0
+ * version: 0.2.0
  *
  * No dependencies. Load with <script src=".../design.js" defer></script>.
  * Everything here works with or without htmx.
@@ -16,7 +16,8 @@
  *       data-confirm-tone="primary"          confirm button style (default: "danger")
  *     From script: design.confirm("Message", {title, label, tone}) → Promise<boolean>
  *  3. Current nav link: marks the .sidenav link matching the current URL with
- *     aria-current="page", on load and after htmx history pushes.
+ *     aria-current="page", on load and after htmx history changes
+ *     (push, replace, back/forward).
  */
 (function () {
   "use strict";
@@ -91,11 +92,23 @@
   });
 
   // Plain HTML: [data-confirm] on links, buttons and submit buttons
+  var HX_REQUEST = "[hx-get],[hx-post],[hx-put],[hx-patch],[hx-delete]";
+
+  // True when htmx will issue a request for this click and an hx-confirm
+  // (on the element or inherited from an ancestor) already covers it, so
+  // the htmx:confirm handler above shows the one and only dialog.
+  function htmxWillConfirm(el) {
+    var source = el.matches(HX_REQUEST) ? el
+      : (el.form && el.form.matches(HX_REQUEST) && el.matches("button:not([type]), [type=submit]")) ? el.form
+      : null;
+    return !!(source && source.closest("[hx-confirm]"));
+  }
+
   document.addEventListener(
     "click",
     function (e) {
       var el = e.target.closest("[data-confirm]");
-      if (!el || el.hasAttribute("hx-confirm")) return;
+      if (!el || htmxWillConfirm(el)) return;
       if (el.dataset.confirmed === "1") {
         delete el.dataset.confirmed;
         return; // let the re-dispatched click through
@@ -105,7 +118,13 @@
       confirmDialog(el.getAttribute("data-confirm"), optsFrom(el)).then(function (yes) {
         if (!yes) return;
         el.dataset.confirmed = "1";
-        el.click();
+        try {
+          el.click();
+        } finally {
+          // If the click didn't dispatch (e.g. the element was disabled in
+          // the meantime) the flag must not linger and skip the next confirm.
+          delete el.dataset.confirmed;
+        }
       });
     },
     true
@@ -113,16 +132,22 @@
 
   /* ---------- 3. Current nav link ---------- */
   // Longest-prefix match, so /ui/budgets/3/edit still highlights "Budgets".
-  // If no link matches, the server-rendered aria-current is left alone.
+  // A root link ("/") only matches the root itself. Fragment-only and
+  // other-origin links never match. If nothing matches, the
+  // server-rendered aria-current is left alone.
   function markCurrentNav() {
-    var path = window.location.pathname.replace(/\/$/, "");
+    var here = window.location;
+    var path = here.pathname.replace(/\/$/, "");
     var links = document.querySelectorAll(".sidenav a");
     var best = null, bestLen = -1;
     links.forEach(function (a) {
       var target = a.getAttribute("data-path") || a.getAttribute("href") || a.getAttribute("hx-get");
-      if (!target) return;
-      var p = new URL(target, window.location.href).pathname.replace(/\/$/, "");
-      if ((path === p || path.indexOf(p + "/") === 0) && p.length > bestLen) {
+      if (!target || target.charAt(0) === "#") return;
+      var url = new URL(target, here.href);
+      if (url.origin !== here.origin) return;
+      var p = url.pathname.replace(/\/$/, "");
+      var matches = p === "" ? path === "" : (path === p || path.indexOf(p + "/") === 0);
+      if (matches && p.length > bestLen) {
         best = a;
         bestLen = p.length;
       }
@@ -134,7 +159,10 @@
     });
   }
   document.addEventListener("DOMContentLoaded", markCurrentNav);
-  document.addEventListener("htmx:pushedIntoHistory", markCurrentNav);
+  ["htmx:pushedIntoHistory", "htmx:replacedInHistory", "htmx:historyRestore"].forEach(function (ev) {
+    document.addEventListener(ev, markCurrentNav);
+  });
+  window.addEventListener("popstate", markCurrentNav);
 
   window.design = { confirm: confirmDialog };
 })();

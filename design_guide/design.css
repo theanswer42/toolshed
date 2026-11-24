@@ -1,6 +1,6 @@
 /*
  * design.css — shared stylesheet for personal web apps
- * version: 0.3.0
+ * version: 0.3.1
  *
  * No build step. Copy this file, design.js (optional) and fonts/ into an
  * app's static folder, keeping fonts/ next to this file.
@@ -145,7 +145,6 @@
     --radius: 6px;
     --radius-lg: 10px;
     --radius-full: 999px;
-    --border: 1px solid var(--color-border);
     --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.06);
     --shadow: 0 1px 3px rgb(0 0 0 / 0.1), 0 1px 2px rgb(0 0 0 / 0.06);
     --shadow-lg: 0 10px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(0 0 0 / 0.1);
@@ -186,6 +185,7 @@
     --color-on-danger: #fff;
 
     /* Derived — themes normally leave these alone */
+    --border: 1px solid var(--color-border);
     --color-surface-raised: light-dark(var(--color-surface), color-mix(in oklab, var(--color-text) 5%, var(--color-surface)));
     --color-hover: color-mix(in oklab, var(--color-text) 7%, var(--color-surface));
     --color-border-strong: color-mix(in oklab, var(--color-text) 22%, var(--color-surface));
@@ -489,24 +489,32 @@
     }
   }
 
+  /*
+   * Each primitive sets its own --gap (and --min) default, so a value set
+   * on an outer container doesn't leak into nested primitives. Override
+   * with .gap-N (utilities layer wins) or style="--gap: …" on the element.
+   */
+
   /* Vertical rhythm: children separated by --gap */
-  .stack { display: flex; flex-direction: column; gap: var(--gap, var(--space-4)); }
+  .stack { display: flex; flex-direction: column; --gap: var(--space-4); gap: var(--gap); }
 
   /* Horizontal group that wraps: buttons, filters, metadata */
-  .cluster { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap, var(--space-2)); }
+  .cluster { --gap: var(--space-2); display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap); }
 
   /* Two ends of a row: title left, actions right */
-  .split { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--gap, var(--space-3)); }
+  .split { --gap: var(--space-3); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--gap); }
 
   /* Responsive equal columns */
   .grid {
     display: grid;
-    gap: var(--gap, var(--space-4));
-    grid-template-columns: repeat(auto-fill, minmax(min(var(--min, 16rem), 100%), 1fr));
+    --gap: var(--space-4);
+    --min: 16rem;
+    gap: var(--gap);
+    grid-template-columns: repeat(auto-fill, minmax(min(var(--min), 100%), 1fr));
   }
 
   /* Main column + side column that wraps under on narrow screens */
-  .with-aside { display: flex; flex-wrap: wrap; gap: var(--gap, var(--space-5)); align-items: flex-start; }
+  .with-aside { --gap: var(--space-5); display: flex; flex-wrap: wrap; gap: var(--gap); align-items: flex-start; }
   .with-aside > :first-child { flex: 999 1 30rem; min-width: 0; }
   .with-aside > :last-child { flex: 1 1 16rem; }
 }
@@ -534,7 +542,6 @@
       padding: max(var(--space-2), env(safe-area-inset-top)) max(var(--space-4), env(safe-area-inset-right)) var(--space-2) max(var(--space-4), env(safe-area-inset-left));
     }
     .flash-region { order: 10; flex-basis: 100%; justify-content: stretch; }
-    .flash-region:empty { display: none; }
     .flash { max-width: none; flex: 1; }
   }
   .brand {
@@ -786,13 +793,20 @@
   }
   :is(button, .button).icon.small { width: var(--control-height-sm); }
 
-  /* Loading state: htmx adds .htmx-request to the element making the request */
+  /*
+   * Loading state. htmx adds .htmx-request to the element that issues the
+   * request: the button itself for hx-post on a button, or the <form> for
+   * hx-post on a form (then its submit buttons spin). Non-htmx code can set
+   * aria-busy="true" on a button.
+   */
+  form.htmx-request :is(button:not([type]), button[type="submit"]),
   :is(button, .button).htmx-request,
   :is(button, .button)[aria-busy="true"] {
     position: relative;
     color: transparent !important;
     pointer-events: none;
   }
+  form.htmx-request :is(button:not([type]), button[type="submit"])::after,
   :is(button, .button).htmx-request::after,
   :is(button, .button)[aria-busy="true"]::after {
     content: "";
@@ -805,7 +819,8 @@
     animation: spin 0.7s linear infinite;
   }
   :is(button, .button).primary:is(.htmx-request, [aria-busy="true"])::after,
-  :is(button, .button).danger:is(.htmx-request, [aria-busy="true"])::after {
+  :is(button, .button).danger:is(.htmx-request, [aria-busy="true"])::after,
+  form.htmx-request button:is(.primary, .danger):is(:not([type]), [type="submit"])::after {
     border-color: var(--color-on-accent) transparent var(--color-on-accent) transparent;
   }
 
@@ -1014,10 +1029,11 @@
     padding: 0;
     display: grid;
     gap: var(--space-5) var(--space-4);
-    grid-template-columns: repeat(auto-fill, minmax(min(var(--min, 10rem), 100%), 1fr));
+    --min: 10rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(var(--min), 100%), 1fr));
   }
   .gallery.large { --min: 15rem; }
-  @media (max-width: 40rem) { .gallery { --min: 8.5rem; gap: var(--space-4) var(--space-3); } }
+  @media (max-width: 40rem) { .gallery, .gallery.large { --min: 8.5rem; gap: var(--space-4) var(--space-3); } }
   .gallery-item {
     display: flex;
     flex-direction: column;
@@ -1137,6 +1153,12 @@
 
   /* ---------- Flash messages (app header, dismissible) ---------- */
   .flash-region { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); min-width: 0; }
+  /*
+   * No message → no extra header row on phones (also when the server left
+   * whitespace inside). It stays rendered, not display:none, so screen
+   * readers keep watching the live region.
+   */
+  @media (max-width: 48rem) { .flash-region:not(:has(*)) { flex-basis: 0; } }
   .flash {
     display: inline-flex;
     align-items: center;
