@@ -25,18 +25,19 @@ script, two fonts. No build step.
    actions go through the confirm dialog.
 7. **Say what happened.** Every mutation ends with a flash message, or
    with an inline error next to the thing that failed.
-8. **Light and dark.** Everything follows the system colour scheme. Each
-   app may change only its accent hue.
+8. **Light and dark.** Everything follows the system colour scheme. Apps
+   choose a theme; they don't hand-pick colours.
 
 ## Files
 
 | File | What it is | Copy into apps? |
 |---|---|---|
 | `design.css` | Tokens, reset, base element styles, layout, components, utilities | Yes |
+| `themes.css` | 14 colour themes (plus the built-in default), each with light and dark values | Yes (optional) |
 | `design.js` | Confirm dialog, flash dismiss, current-nav highlighting (about 140 lines, no deps) | Yes (optional) |
 | `fonts/` | Inter and JetBrains Mono (variable, woff2, Latin + Latin Extended), with licences | Yes, next to `design.css` |
 | `GUIDE.md` | The design guide | No |
-| `demo/` | Static demo pages and `demo.js` (fake interactions for the demo only) | No |
+| `demo/` | Static demo pages, `demo.js` and `demo.css` (demo-only interactions and theme gallery) | No |
 
 ## Using it in an app
 
@@ -44,17 +45,27 @@ Copy `design.css`, `design.js` and `fonts/` into the app's static folder,
 keeping `fonts/` next to `design.css`:
 
 ```html
+<html lang="en" data-theme="nord">                <!-- optional: pick a theme -->
 <link rel="stylesheet" href="/static/design/design.css">
+<link rel="stylesheet" href="/static/design/themes.css">   <!-- only if using a theme -->
 <link rel="stylesheet" href="/static/app.css">   <!-- app-specific, optional -->
 <script src="/static/design/design.js" defer></script>
 ```
 
-App-specific CSS goes in its own file, inside `@layer app { … }` or
-unlayered, and uses the tokens. To give an app its own accent colour:
+**Theme.** Set `data-theme` on `<html>` to one of: `slate`, `stone`,
+`github`, `solarized`, `gruvbox`, `nord`, `catppuccin`, `rose-pine`,
+`tokyo-night`, `dracula`, `one`, `everforest`, `kanagawa`, `sepia`.
+Leave it off for the default gray/blue. Every theme has light and dark
+values; the system setting picks one, or force it with
+`data-mode="light"` / `data-mode="dark"`. The default theme can also
+change just its accent hue:
 
 ```css
 :root { --accent-hue: 160; }  /* green; default is 263 (blue) */
 ```
+
+App-specific CSS goes in its own file, inside `@layer app { … }` or
+unlayered, and uses the tokens.
 
 Each copied file carries a `version:` line in its header comment. When
 you change the guide, bump the version so you can tell which app has
@@ -64,6 +75,15 @@ which copy.
 
 Edit `design.css` and check every demo page in light and dark mode
 (the moon button in the demo header cycles auto / light / dark), and
-at a narrow width. The accent-hue slider on the Foundations page
-previews per-app accents. If you add a component, add it to a demo
+at a narrow width. The theme menu in the demo header switches themes;
+the Foundations page shows every theme side by side and has an
+accent-hue slider for the default theme.
+
+**Adding a theme.** A theme is one `[data-theme="name"]` block in
+`themes.css` that sets the core colour tokens (background, surfaces,
+border, text, muted text, accent, success, warning, danger, and the
+text colours used on accent and danger buttons), each as
+`light-dark(light, dark)`. Everything else is derived. Check contrast
+before committing: body and muted text, button text, links and status
+text should all reach WCAG AA (4.5:1) against their backgrounds. If you add a component, add it to a demo
 page and to `GUIDE.md` in the same change.

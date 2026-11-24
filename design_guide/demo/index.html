@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Foundations · Design guide</title>
   <link rel="stylesheet" href="../design.css">
+  <link rel="stylesheet" href="../themes.css">
+  <link rel="stylesheet" href="demo.css">
   <script src="../design.js" defer></script>
   <script src="demo.js"></script>
 </head>
@@ -13,7 +15,24 @@
   <header class="app-header">
     <a class="brand" href="index.html"><span class="brand-mark">D</span>Design guide</a>
     <div id="flash" class="flash-region" role="status" aria-live="polite"></div>
-    <button type="button" class="ghost small" data-demo-theme title="Cycle theme: auto / light / dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg><span class="label">auto</span></button>
+    <select class="w-auto" data-demo-theme-select aria-label="Theme">
+      <option value="default">Default</option>
+      <option value="slate">Slate</option>
+      <option value="stone">Stone</option>
+      <option value="github">GitHub</option>
+      <option value="solarized">Solarized</option>
+      <option value="gruvbox">Gruvbox</option>
+      <option value="nord">Nord</option>
+      <option value="catppuccin">Catppuccin</option>
+      <option value="rose-pine">Rosé Pine</option>
+      <option value="tokyo-night">Tokyo Night</option>
+      <option value="dracula">Dracula</option>
+      <option value="one">One</option>
+      <option value="everforest">Everforest</option>
+      <option value="kanagawa">Kanagawa</option>
+      <option value="sepia">Sepia</option>
+    </select>
+    <button type="button" class="ghost small" data-demo-mode title="Cycle mode: auto / light / dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg><span class="label">auto</span></button>
   </header>
 
   <nav class="sidenav" aria-label="Main">
@@ -48,9 +67,286 @@
         <div class="card-body cluster gap-4">
           <label for="hue" class="small">Accent hue <span class="muted num" data-demo-hue-value>263</span></label>
           <input id="hue" type="range" min="0" max="360" step="1" data-demo-hue style="max-width: 20rem">
-          <span class="small muted">Per-app override: <code>:root { --accent-hue: 160; }</code></span>
+          <span class="small muted">Default theme only. Per-app override: <code>:root { --accent-hue: 160; }</code></span>
         </div>
       </div>
+
+      <section class="section" id="themes">
+        <header><h2>Themes</h2><span class="small muted">Each shown in light and dark. Click one to apply it to the whole demo.</span></header>
+        <div class="theme-grid">
+          <button type="button" class="theme-card" data-theme="default" data-demo-set-theme="default" aria-label="Use Default theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Default</span><span class="xsmall muted">Neutral gray with blue</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="slate" data-demo-set-theme="slate" aria-label="Use Slate theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Slate</span><span class="xsmall muted">Cool blue-gray with indigo</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="stone" data-demo-set-theme="stone" aria-label="Use Stone theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Stone</span><span class="xsmall muted">Warm neutral with orange</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="github" data-demo-set-theme="github" aria-label="Use GitHub theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">GitHub</span><span class="xsmall muted">GitHub's Primer colours</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="solarized" data-demo-set-theme="solarized" aria-label="Use Solarized theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Solarized</span><span class="xsmall muted">Ethan Schoonover's classic</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="gruvbox" data-demo-set-theme="gruvbox" aria-label="Use Gruvbox theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Gruvbox</span><span class="xsmall muted">Retro, warm and earthy</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="nord" data-demo-set-theme="nord" aria-label="Use Nord theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Nord</span><span class="xsmall muted">Arctic, north-bluish</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="catppuccin" data-demo-set-theme="catppuccin" aria-label="Use Catppuccin theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Catppuccin</span><span class="xsmall muted">Soothing pastels (Latte / Mocha)</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="rose-pine" data-demo-set-theme="rose-pine" aria-label="Use Rosé Pine theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Rosé Pine</span><span class="xsmall muted">Muted, soho vibes (Dawn / Main)</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="tokyo-night" data-demo-set-theme="tokyo-night" aria-label="Use Tokyo Night theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Tokyo Night</span><span class="xsmall muted">Neon city at night (Day / Night)</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="dracula" data-demo-set-theme="dracula" aria-label="Use Dracula theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Dracula</span><span class="xsmall muted">Dark purple classic, with a light companion</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="one" data-demo-set-theme="one" aria-label="Use One theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">One</span><span class="xsmall muted">Atom's One Light / One Dark</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="everforest" data-demo-set-theme="everforest" aria-label="Use Everforest theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Everforest</span><span class="xsmall muted">Green, comfortable and calm</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="kanagawa" data-demo-set-theme="kanagawa" aria-label="Use Kanagawa theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Kanagawa</span><span class="xsmall muted">After Hokusai's Great Wave (Lotus / Wave)</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="sepia" data-demo-set-theme="sepia" aria-label="Use Sepia theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Sepia</span><span class="xsmall muted">Paper and ink, easy on the eyes</span></div>
+          </button>
+        </div>
+        <p class="small muted">Apps choose a theme with <code>&lt;html data-theme="nord"&gt;</code> and load <code>themes.css</code> after <code>design.css</code>. Light/dark follows the system unless <code>data-mode="light|dark"</code> is set.</p>
+      </section>
 
       <section class="section">
         <header><h2>Colour</h2><span class="small muted">Semantic tokens; each has a light and a dark value.</span></header>

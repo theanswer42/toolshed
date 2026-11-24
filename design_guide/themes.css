@@ -1,0 +1,242 @@
+/*
+ * themes.css — colour themes for design.css
+ * version: 0.2.0
+ *
+ * Optional. Load after design.css and pick a theme on <html>:
+ *   <html data-theme="nord">
+ * Without data-theme (or with data-theme="default") the default gray/blue
+ * palette from design.css is used. Each theme sets only the core colour
+ * tokens, as light-dark(light, dark); design.css derives the rest.
+ * Light/dark follows the system; force it with data-mode="light|dark".
+ *
+ * Palettes are adapted from the projects they are named after. Values are
+ * tuned so text and buttons meet WCAG AA contrast against their surfaces.
+ */
+
+@layer tokens {
+
+  /* Slate: Cool blue-gray with indigo */
+  [data-theme="slate"] {
+    --color-bg: light-dark(#f8fafc, #020617);
+    --color-surface: light-dark(#ffffff, #0f172a);
+    --color-surface-sunken: light-dark(#f1f5f9, #1e293b);
+    --color-border: light-dark(#e2e8f0, #1e293b);
+    --color-text: light-dark(#0f172a, #f1f5f9);
+    --color-text-muted: light-dark(#475569, #94a3b8);
+    --color-accent: light-dark(#4f46e5, #818cf8);
+    --color-on-accent: light-dark(#ffffff, #0f172a);
+    --color-success: light-dark(#16a34a, #4ade80);
+    --color-warning: light-dark(#d67400, #fbbf24);
+    --color-danger: light-dark(#dc2626, #f87171);
+    --color-on-danger: light-dark(#ffffff, #020617);
+  }
+
+  /* Stone: Warm neutral with orange */
+  [data-theme="stone"] {
+    --color-bg: light-dark(#fafaf9, #0c0a09);
+    --color-surface: light-dark(#ffffff, #1c1917);
+    --color-surface-sunken: light-dark(#f5f5f4, #292524);
+    --color-border: light-dark(#e7e5e4, #292524);
+    --color-text: light-dark(#1c1917, #f5f5f4);
+    --color-text-muted: light-dark(#57534e, #a8a29e);
+    --color-accent: light-dark(#c2410c, #fb923c);
+    --color-on-accent: light-dark(#ffffff, #1c1917);
+    --color-success: light-dark(#15803d, #4ade80);
+    --color-warning: light-dark(#b45309, #fbbf24);
+    --color-danger: light-dark(#b91c1c, #f87171);
+    --color-on-danger: light-dark(#ffffff, #0c0a09);
+  }
+
+  /* GitHub: GitHub's Primer colours */
+  [data-theme="github"] {
+    --color-bg: light-dark(#f6f8fa, #010409);
+    --color-surface: light-dark(#ffffff, #0d1117);
+    --color-surface-sunken: light-dark(#eff2f5, #151b23);
+    --color-border: light-dark(#d1d9e0, #30363d);
+    --color-text: light-dark(#1f2328, #f0f6fc);
+    --color-text-muted: light-dark(#59636e, #9198a1);
+    --color-accent: light-dark(#0969da, #4493f8);
+    --color-on-accent: light-dark(#ffffff, #010409);
+    --color-success: light-dark(#1a7f37, #3fb950);
+    --color-warning: light-dark(#9a6700, #d29922);
+    --color-danger: light-dark(#cf222e, #f85149);
+    --color-on-danger: light-dark(#ffffff, #010409);
+  }
+
+  /* Solarized: Ethan Schoonover's classic */
+  [data-theme="solarized"] {
+    --color-bg: light-dark(#eee8d5, #00212b);
+    --color-surface: light-dark(#fdf6e3, #002b36);
+    --color-surface-sunken: light-dark(#e6dfc8, #073642);
+    --color-border: light-dark(#ddd6c1, #0b4250);
+    --color-text: light-dark(#073642, #eee8d5);
+    --color-text-muted: light-dark(#4c6269, #93a1a1);
+    --color-accent: light-dark(#0076bd, #0070b7);
+    --color-on-accent: light-dark(#ffffff, #fdf6e3);
+    --color-success: light-dark(#7f9300, #859900);
+    --color-warning: light-dark(#af8300, #b58900);
+    --color-danger: light-dark(#d82e2c, #d02526);
+    --color-on-danger: light-dark(#ffffff, #fdf6e3);
+  }
+
+  /* Gruvbox: Retro, warm and earthy */
+  [data-theme="gruvbox"] {
+    --color-bg: light-dark(#f2e5bc, #1d2021);
+    --color-surface: light-dark(#fbf1c7, #282828);
+    --color-surface-sunken: light-dark(#ebdbb2, #32302f);
+    --color-border: light-dark(#d5c4a1, #3c3836);
+    --color-text: light-dark(#3c3836, #ebdbb2);
+    --color-text-muted: light-dark(#635951, #ab9c87);
+    --color-accent: light-dark(#af3a03, #fe8019);
+    --color-on-accent: light-dark(#fbf1c7, #1d2021);
+    --color-success: light-dark(#79740e, #b8bb26);
+    --color-warning: light-dark(#b57614, #fabd2f);
+    --color-danger: light-dark(#9d0006, #fb4934);
+    --color-on-danger: light-dark(#ffffff, #1d2021);
+  }
+
+  /* Nord: Arctic, north-bluish */
+  [data-theme="nord"] {
+    --color-bg: light-dark(#e5e9f0, #242933);
+    --color-surface: light-dark(#eceff4, #2e3440);
+    --color-surface-sunken: light-dark(#dfe4ec, #3b4252);
+    --color-border: light-dark(#d8dee9, #3b4252);
+    --color-text: light-dark(#2e3440, #eceff4);
+    --color-text-muted: light-dark(#4c566a, #b4bccb);
+    --color-accent: light-dark(#5275a0, #88c0d0);
+    --color-on-accent: light-dark(#ffffff, #2e3440);
+    --color-success: light-dark(#5f8a46, #a3be8c);
+    --color-warning: light-dark(#ad7a12, #ebcb8b);
+    --color-danger: light-dark(#b3555e, #d77982);
+    --color-on-danger: light-dark(#ffffff, #242933);
+  }
+
+  /* Catppuccin: Soothing pastels (Latte / Mocha) */
+  [data-theme="catppuccin"] {
+    --color-bg: light-dark(#e6e9ef, #181825);
+    --color-surface: light-dark(#eff1f5, #1e1e2e);
+    --color-surface-sunken: light-dark(#dce0e8, #11111b);
+    --color-border: light-dark(#ccd0da, #313244);
+    --color-text: light-dark(#40435d, #cdd6f4);
+    --color-text-muted: light-dark(#595c74, #a6adc8);
+    --color-accent: light-dark(#8839ef, #cba6f7);
+    --color-on-accent: light-dark(#eff1f5, #1e1e2e);
+    --color-success: light-dark(#37971f, #a6e3a1);
+    --color-warning: light-dark(#c47300, #f9e2af);
+    --color-danger: light-dark(#d20f39, #f38ba8);
+    --color-on-danger: light-dark(#ffffff, #181825);
+  }
+
+  /* Rosé Pine: Muted, soho vibes (Dawn / Main) */
+  [data-theme="rose-pine"] {
+    --color-bg: light-dark(#faf4ed, #191724);
+    --color-surface: light-dark(#fffaf3, #1f1d2e);
+    --color-surface-sunken: light-dark(#f2e9e1, #26233a);
+    --color-border: light-dark(#dfdad9, #403d52);
+    --color-text: light-dark(#4b466d, #e0def4);
+    --color-text-muted: light-dark(#64607e, #938fad);
+    --color-accent: light-dark(#7b6594, #c4a7e7);
+    --color-on-accent: light-dark(#fffaf3, #191724);
+    --color-success: light-dark(#286983, #9ccfd8);
+    --color-warning: light-dark(#c67900, #f6c177);
+    --color-danger: light-dark(#ab5a71, #eb6f92);
+    --color-on-danger: light-dark(#ffffff, #191724);
+  }
+
+  /* Tokyo Night: Neon city at night (Day / Night) */
+  [data-theme="tokyo-night"] {
+    --color-bg: light-dark(#e1e2e7, #16161e);
+    --color-surface: light-dark(#e9e9ed, #1a1b26);
+    --color-surface-sunken: light-dark(#d6d8df, #24283b);
+    --color-border: light-dark(#c4c8da, #292e42);
+    --color-text: light-dark(#343b58, #c0caf5);
+    --color-text-muted: light-dark(#4c5378, #9aa5ce);
+    --color-accent: light-dark(#1f71dd, #7aa2f7);
+    --color-on-accent: light-dark(#ffffff, #16161e);
+    --color-success: light-dark(#587539, #9ece6a);
+    --color-warning: light-dark(#8c6c3e, #e0af68);
+    --color-danger: light-dark(#c64343, #f7768e);
+    --color-on-danger: light-dark(#ffffff, #16161e);
+  }
+
+  /* Dracula: Dark purple classic, with a light companion */
+  [data-theme="dracula"] {
+    --color-bg: light-dark(#f4f4f8, #21222c);
+    --color-surface: light-dark(#ffffff, #282a36);
+    --color-surface-sunken: light-dark(#ebebf2, #313341);
+    --color-border: light-dark(#dcdce6, #44475a);
+    --color-text: light-dark(#282a36, #f8f8f2);
+    --color-text-muted: light-dark(#5c5f77, #a6abc8);
+    --color-accent: light-dark(#644ac9, #bd93f9);
+    --color-on-accent: light-dark(#ffffff, #21222c);
+    --color-success: light-dark(#14710a, #50fa7b);
+    --color-warning: light-dark(#846e15, #f1fa8c);
+    --color-danger: light-dark(#cb3a2a, #ff5555);
+    --color-on-danger: light-dark(#ffffff, #21222c);
+  }
+
+  /* One: Atom's One Light / One Dark */
+  [data-theme="one"] {
+    --color-bg: light-dark(#f0f0f1, #21252b);
+    --color-surface: light-dark(#fafafa, #282c34);
+    --color-surface-sunken: light-dark(#e5e5e6, #2c313a);
+    --color-border: light-dark(#dbdbdc, #3e4451);
+    --color-text: light-dark(#383a42, #d7dae0);
+    --color-text-muted: light-dark(#5c5f68, #9da5b4);
+    --color-accent: light-dark(#346ce6, #61afef);
+    --color-on-accent: light-dark(#ffffff, #21252b);
+    --color-success: light-dark(#4a9b49, #98c379);
+    --color-warning: light-dark(#bb7e00, #e5c07b);
+    --color-danger: light-dark(#cc4437, #e06c75);
+    --color-on-danger: light-dark(#ffffff, #21252b);
+  }
+
+  /* Everforest: Green, comfortable and calm */
+  [data-theme="everforest"] {
+    --color-bg: light-dark(#efebd4, #232a2e);
+    --color-surface: light-dark(#fdf6e3, #2d353b);
+    --color-surface-sunken: light-dark(#f4f0d9, #343f44);
+    --color-border: light-dark(#e6e2cc, #475258);
+    --color-text: light-dark(#414f57, #dccfb3);
+    --color-text-muted: light-dark(#586871, #a6b2a9);
+    --color-accent: light-dark(#1279aa, #7fbbb3);
+    --color-on-accent: light-dark(#ffffff, #232a2e);
+    --color-success: light-dark(#7e9200, #a7c080);
+    --color-warning: light-dark(#bb7c00, #dbbc7f);
+    --color-danger: light-dark(#d43337, #e67e80);
+    --color-on-danger: light-dark(#ffffff, #232a2e);
+  }
+
+  /* Kanagawa: After Hokusai's Great Wave (Lotus / Wave) */
+  [data-theme="kanagawa"] {
+    --color-bg: light-dark(#e5ddb0, #16161d);
+    --color-surface: light-dark(#f2ecbc, #1f1f28);
+    --color-surface-sunken: light-dark(#e7dba0, #2a2a37);
+    --color-border: light-dark(#d5cea3, #363646);
+    --color-text: light-dark(#424252, #dcd7ba);
+    --color-text-muted: light-dark(#5f5c4f, #a6a69c);
+    --color-accent: light-dark(#4a6698, #7e9cd8);
+    --color-on-accent: light-dark(#f2ecbc, #1f1f28);
+    --color-success: light-dark(#6f894e, #98bb6c);
+    --color-warning: light-dark(#c66700, #e6c384);
+    --color-danger: light-dark(#c84053, #e46876);
+    --color-on-danger: light-dark(#ffffff, #16161d);
+  }
+
+  /* Sepia: Paper and ink, easy on the eyes */
+  [data-theme="sepia"] {
+    --color-bg: light-dark(#f1e8d4, #1b1813);
+    --color-surface: light-dark(#fbf7ec, #24201a);
+    --color-surface-sunken: light-dark(#ece3cc, #2d281f);
+    --color-border: light-dark(#e0d5bb, #3a3328);
+    --color-text: light-dark(#3b3226, #e8dfcc);
+    --color-text-muted: light-dark(#6b5f4d, #a89c86);
+    --color-accent: light-dark(#9c4a1a, #d9a066);
+    --color-on-accent: light-dark(#fbf7ec, #1b1813);
+    --color-success: light-dark(#4f7a28, #9cbf6b);
+    --color-warning: light-dark(#a86c00, #e0b050);
+    --color-danger: light-dark(#b23a2b, #e07a66);
+    --color-on-danger: light-dark(#ffffff, #1b1813);
+  }
+
+}

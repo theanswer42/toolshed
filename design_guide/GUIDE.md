@@ -398,11 +398,20 @@ label, tone})` returns `true` or `false`.
 All values come from tokens in `design.css` (see the Foundations demo
 page).
 
-- **Colour**: neutral grays plus one accent (`--accent-hue`, blue by
-  default). Status colours are success (green), warning (amber) and danger
-  (red). Use the semantic tokens (`--color-text-muted`,
-  `--color-surface`, …), never raw palette values, so light and dark
-  mode both work.
+- **Colour**: every colour comes from semantic tokens
+  (`--color-surface`, `--color-text-muted`, `--color-accent`, …), never
+  raw values, so themes and dark mode work everywhere. A theme sets
+  about a dozen **core** tokens (background, surface, sunken surface,
+  border, text, muted text, accent, success, warning, danger, and the
+  text colours on accent and danger buttons). `design.css` **derives**
+  the rest (hover, strong border, soft backgrounds for alerts and
+  badges, link colour, status text) with `color-mix()`, so a theme
+  can't miss a token. Status colours: success, warning and danger.
+- **Themes**: `themes.css` has 14 themes; the default gray/blue is built
+  into `design.css`. Choose one per app with `<html data-theme="…">`.
+  Every theme defines light and dark values and meets WCAG AA contrast
+  for text, muted text, button text, links and status text in both
+  modes.
 - **Type**: Inter for UI and JetBrains Mono for code and IDs, both
   self-hosted. Body and controls are 14px (`--text-base`). Page titles
   are 24px, section titles 18px, metadata 13px, badges and table headers
@@ -413,8 +422,9 @@ page).
 - **Shape**: radius 6px for controls and 10px for cards and dialogs.
   Elevation is subtle: cards get `--shadow-sm`, and `--shadow-lg` is only
   for dialogs and sticky bars.
-- **Dark mode**: automatic from the system setting. To force it, set
-  `<html data-theme="dark|light">`.
+- **Light / dark**: automatic from the system setting. To force it, set
+  `<html data-mode="dark">` or `data-mode="light"`. This is separate from
+  the theme, so any theme can be shown in either mode.
 - **Icons**: inline SVG, 24×24 viewBox, `stroke="currentColor"`,
   stroke width 2, sized by context (1rem in buttons and nav). Lucide
   (ISC licence) is a good source; copy the individual icons you need

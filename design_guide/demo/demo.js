@@ -15,14 +15,28 @@
     } catch (e) { return null; }
   }
 
-  /* Theme: auto → light → dark */
-  var themes = ["auto", "light", "dark"];
-  function applyTheme(t) {
-    if (t === "auto") root.removeAttribute("data-theme");
-    else root.setAttribute("data-theme", t);
-    document.querySelectorAll("[data-demo-theme] .label").forEach(function (l) { l.textContent = t; });
+  /* Mode: auto → light → dark (data-mode on <html>) */
+  var modes = ["auto", "light", "dark"];
+  var mode = store("demo-mode") || "auto";
+  function applyMode(m) {
+    if (m === "auto") root.removeAttribute("data-mode");
+    else root.setAttribute("data-mode", m);
+    document.querySelectorAll("[data-demo-mode] .label").forEach(function (l) { l.textContent = m; });
   }
-  var theme = store("demo-theme") || "auto";
+  applyMode(mode);
+
+  /* Theme (data-theme on <html>) */
+  var theme = store("demo-theme") || "default";
+  function applyTheme(t) {
+    theme = t;
+    if (t === "default") root.removeAttribute("data-theme");
+    else root.setAttribute("data-theme", t);
+    store("demo-theme", t === "default" ? null : t);
+    document.querySelectorAll("[data-demo-theme-select]").forEach(function (s) { s.value = t; });
+    document.querySelectorAll("[data-demo-set-theme]").forEach(function (c) {
+      c.setAttribute("aria-pressed", c.getAttribute("data-demo-set-theme") === t ? "true" : "false");
+    });
+  }
   applyTheme(theme);
 
   /* Accent hue */
@@ -30,7 +44,11 @@
   if (hue) root.style.setProperty("--accent-hue", hue);
 
   document.addEventListener("DOMContentLoaded", function () {
+    applyMode(mode);
     applyTheme(theme);
+    document.querySelectorAll("[data-demo-theme-select]").forEach(function (sel) {
+      sel.addEventListener("change", function () { applyTheme(sel.value); });
+    });
     var slider = document.querySelector("[data-demo-hue]");
     if (slider) {
       var out = document.querySelector("[data-demo-hue-value]");
@@ -65,10 +83,15 @@
   document.addEventListener("click", function (e) {
     var el;
 
-    if ((el = e.target.closest("[data-demo-theme]"))) {
-      theme = themes[(themes.indexOf(theme) + 1) % themes.length];
-      store("demo-theme", theme === "auto" ? null : theme);
-      applyTheme(theme);
+    if ((el = e.target.closest("[data-demo-mode]"))) {
+      mode = modes[(modes.indexOf(mode) + 1) % modes.length];
+      store("demo-mode", mode === "auto" ? null : mode);
+      applyMode(mode);
+      return;
+    }
+
+    if ((el = e.target.closest("[data-demo-set-theme]"))) {
+      applyTheme(el.getAttribute("data-demo-set-theme"));
       return;
     }
 

@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Feedback · Design guide</title>
   <link rel="stylesheet" href="../design.css">
+  <link rel="stylesheet" href="../themes.css">
+  <link rel="stylesheet" href="demo.css">
   <script src="../design.js" defer></script>
   <script src="demo.js"></script>
 </head>
@@ -13,7 +15,24 @@
   <header class="app-header">
     <a class="brand" href="index.html"><span class="brand-mark">D</span>Design guide</a>
     <div id="flash" class="flash-region" role="status" aria-live="polite"><div class="flash success"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg><span>Account created</span><button type="button" class="dismiss" data-dismiss aria-label="Dismiss">×</button></div></div>
-    <button type="button" class="ghost small" data-demo-theme title="Cycle theme: auto / light / dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg><span class="label">auto</span></button>
+    <select class="w-auto" data-demo-theme-select aria-label="Theme">
+      <option value="default">Default</option>
+      <option value="slate">Slate</option>
+      <option value="stone">Stone</option>
+      <option value="github">GitHub</option>
+      <option value="solarized">Solarized</option>
+      <option value="gruvbox">Gruvbox</option>
+      <option value="nord">Nord</option>
+      <option value="catppuccin">Catppuccin</option>
+      <option value="rose-pine">Rosé Pine</option>
+      <option value="tokyo-night">Tokyo Night</option>
+      <option value="dracula">Dracula</option>
+      <option value="one">One</option>
+      <option value="everforest">Everforest</option>
+      <option value="kanagawa">Kanagawa</option>
+      <option value="sepia">Sepia</option>
+    </select>
+    <button type="button" class="ghost small" data-demo-mode title="Cycle mode: auto / light / dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg><span class="label">auto</span></button>
   </header>
 
   <nav class="sidenav" aria-label="Main">
