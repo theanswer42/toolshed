@@ -91,6 +91,7 @@ Outcomes and exit codes:
 | INV-14 | A task container always runs with CPU, memory, and PID limits. The agent is stopped after 50 minutes, so the runner can still record the outcome before the task's token expires at 60 | T2 | `compose.yaml`, task runner | `verify`: limits present; runner test for the time limit |
 | INV-15 | When a task ends without `keep`, its container and volume are removed | T2 | `task` cleanup trap | `verify`: nothing left after exit |
 | INV-16 | `task` refuses to start if a secret file is missing, empty, or readable by other host users | T2 | `task` | `verify`: start fails for each bad secret |
+| INV-18 | The agent's user-level Claude Code config comes only from the image, read only. Nothing persists from one task to the next | T1 | `Dockerfile`; no shared writable volumes | `verify`: `~/.claude` config files are read only and match the image; no volume is reused across tasks |
 | INV-17 | A task container cannot resolve external domain names. Only the proxy resolves names, so DNS queries cannot carry data out | T1 | Network and DNS settings in `compose.yaml` | `verify`: resolving an external name from a task container fails |
 
 Notes:
@@ -111,6 +112,14 @@ Notes:
 | Prompt building, branch selection | T2 | Mistakes are visible and recoverable |
 | Dev image tool installs | T3 | Failures are loud: a missing tool breaks the task at once |
 | Messages and help output | T3 | Cosmetic |
+
+## Agent configuration
+
+- **User-level config** lives in this repo under `sandbox/claude/`: `CLAUDE.md`, `skills/`, `agents/`, and `settings.json`. The dev image copies it into the agent's `~/.claude`, read only. Changes go through PRs: `settings.json` and any hooks are T1, because they control permissions and run code; instruction files and skills are T2.
+- **The host's `~/.claude` is never mounted or copied.** It holds credentials, transcripts from other projects, and hooks and plugins that run code.
+- **Project config** comes with the clone: the repo's own `CLAUDE.md` and `.claude/` directory.
+- **Automatic memory is off** in tasks. Anything worth keeping goes into the repo through a PR: the scratchpad, `CLAUDE.md`, or a project spec proposal.
+- **Session state**, such as transcripts and caches, is written to a writable directory inside the task container and is deleted with it.
 
 ## Repo setup
 
