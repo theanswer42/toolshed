@@ -79,11 +79,11 @@ Outcomes and exit codes:
 | INV-2 | The Docker socket is never mounted into or reachable from a task container | T1 | `compose.yaml` | `verify`: socket check |
 | INV-3 | A task container has no route to the internet except through the egress proxy | T1 | Internal network in `compose.yaml` | `verify`: direct connection fails |
 | INV-4 | The proxy forwards only to domains on the allowlist | T1 | Proxy config | `verify`: an allowlisted host succeeds, another fails |
-| INV-5 | Secrets are never written into an image layer, the task's clone, a commit, or logs | T1 | `Dockerfile`, `task`, git credential config | `verify`: image history and clone scanned with betterleaks |
+| INV-5 | Secrets are never written into an image layer, the task's clone, a commit, or logs | T1 | `Dockerfile`, `task`, git credential config, GitHub push protection | `verify`: image history and clone scanned with betterleaks |
 | INV-6 | The agent runs as a non-root user with no capabilities and `no-new-privileges` | T1 | `Dockerfile`, `compose.yaml` | `verify`: uid and `CapEff` check |
 | INV-7 | A GitHub App private key never enters a task container. A container receives only one installation token, minted for its task's repo alone, with its role's permissions | T1 | `task` | `verify`: no key file in the container; token's repos and permissions match the role |
 | INV-8 | A reviewer task cannot change repository contents | T1 | Reviewer token: contents read only | `verify`: push with a reviewer token is rejected |
-| INV-9 | The agent never pushes to the default branch and never merges | T1 | Branch protection where available, plus a pre-push hook | `verify`: push to the default branch is rejected |
+| INV-9 | No commit reaches the default branch without the user's approval of the PR's latest push | T1 | Repo ruleset (see Repo setup); `task` refuses repos without it | `verify`: push to the default branch is rejected; `task` refuses a repo missing a required rule |
 | INV-10 | Only text written by trusted authors enters the task prompt, and a task refuses a target opened by anyone else | T1 | Task runner | Runner tests with untrusted comments and targets |
 | INV-11 | Every task ends with exactly one outcome, and that outcome is visible on the target | T2 | Task runner wraps the agent and checks GitHub | Runner tests for each outcome and for an agent that exits without one |
 | INV-12 | Only the task runner changes `agent:` labels | T2 | Task runner; agent instructions | Runner tests |
@@ -94,7 +94,8 @@ Outcomes and exit codes:
 
 Notes:
 
-- INV-9 is fully enforced only with branch protection, which needs GitHub Pro for private repos on a personal account. Without it, the implementer token's contents permission is enough to merge, and only the pre-push hook and instructions stand in the way. This spec records which applies once it is known.
+- INV-9 relies on rulesets, which are free for public repos. Target repos are assumed to be public. A private repo on a plan without rulesets is refused by `task`, so INV-9 holds for every repo the sandbox runs on.
+- After the user approves, the implementer token could technically merge the PR. That is accepted: it can only merge what the user approved, because a new push dismisses the approval.
 - INV-10 is enforced on what the runner puts in the prompt. The agent could still fetch untrusted text itself with `gh`; its instructions forbid that, and a reviewer checks for it. It is not fully mechanical.
 
 ## Risk tiers
@@ -109,6 +110,20 @@ Notes:
 | Prompt building, branch selection | T2 | Mistakes are visible and recoverable |
 | Dev image tool installs | T3 | Failures are loud: a missing tool breaks the task at once |
 | Messages and help output | T3 | Cosmetic |
+
+## Repo setup
+
+Each target repo is prepared once by the user. `task` checks the ruleset before every task, through the public rules endpoint, and refuses the repo if a rule is missing.
+
+- **Ruleset on the default branch**, with no bypass list:
+  - Require a pull request before merging, with one approval.
+  - Require review from code owners. `CODEOWNERS` contains only `* @<user>`, so only the user's approval counts. An approval from the reviewer App does not.
+  - Dismiss stale approvals when new commits are pushed, and require approval of the most recent push.
+  - Block force pushes and deletion.
+- **`CODEOWNERS`** at `.github/CODEOWNERS`. Changes to it need the user's approval like any other file.
+- **GitHub secret scanning and push protection** turned on. Both are free for public repos and back up INV-5: a secret the agent tries to push is blocked by GitHub as well as by betterleaks.
+- **Labels** `agent:working`, `agent:needs-input`, `agent:review-ready`, and `agent:reviewed` exist. `task` creates any that are missing.
+- **Both Apps installed** on the repo.
 
 ## Reference models
 
@@ -163,7 +178,6 @@ Each stage ends with its exit criteria met and the user's sign-off before the ne
 
 ## Open questions
 
-- Is branch protection available on the target repos' plan? Decides how INV-9 is enforced.
 - Installation tokens expire after one hour. Is a one-hour task limit acceptable at first, or is a token broker needed so long tasks can refresh?
 - Proxy choice: tinyproxy (smaller, simple domain filter) or Squid (more mature, heavier).
 - Which Claude Code endpoints besides `api.anthropic.com` are needed, and can non-essential traffic be turned off so they are not?
