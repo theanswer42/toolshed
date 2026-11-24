@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Feedback · Design guide</title>
+  <link rel="stylesheet" href="../design.css">
+  <link rel="stylesheet" href="../themes.css">
+  <link rel="stylesheet" href="demo.css">
+  <script src="../design.js" defer></script>
+  <script src="demo.js"></script>
+</head>
+<body class="app">
+
+  <header class="app-header">
+    <a class="brand" href="index.html"><span class="brand-mark">D</span>Design guide</a>
+    <div id="flash" class="flash-region" role="status" aria-live="polite"><div class="flash success"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg><span>Account created</span><button type="button" class="dismiss" data-dismiss aria-label="Dismiss">×</button></div></div>
+    <select class="w-auto" data-demo-theme-select aria-label="Theme">
+      <option value="default">Default</option>
+      <option value="slate">Slate</option>
+      <option value="stone">Stone</option>
+      <option value="github">GitHub</option>
+      <option value="solarized">Solarized</option>
+      <option value="gruvbox">Gruvbox</option>
+      <option value="nord">Nord</option>
+      <option value="catppuccin">Catppuccin</option>
+      <option value="rose-pine">Rosé Pine</option>
+      <option value="tokyo-night">Tokyo Night</option>
+      <option value="dracula">Dracula</option>
+      <option value="one">One</option>
+      <option value="everforest">Everforest</option>
+      <option value="kanagawa">Kanagawa</option>
+      <option value="sepia">Sepia</option>
+    </select>
+    <button type="button" class="ghost small" data-demo-mode title="Cycle mode: auto / light / dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg><span class="label hide-narrow">auto</span></button>
+  </header>
+
+  <nav class="sidenav" aria-label="Main">
+    <h2>Demo</h2>
+    <ul>
+        <li><a href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7V5h16v2M9 19h6M12 5v14"/></svg><span>Foundations</span></a></li>
+        <li><a href="shell.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/></svg><span>Shell</span></a></li>
+        <li><a href="lists.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 10v10"/></svg><span>Lists</span></a></li>
+        <li><a href="forms.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg><span>Forms</span></a></li>
+        <li><a href="feedback.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 003.4 0"/></svg><span>Feedback</span></a></li>
+    </ul>
+    <h2 class="hide-narrow">Example app</h2>
+    <ul class="hide-narrow">
+      <li><a href="lists.html#table-view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 10v10"/></svg>Transactions <span class="count">214</span></a></li>
+      <li><a href="lists.html#tile-view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>Albums <span class="count">38</span></a></li>
+      <li><a href="forms.html#inline-form"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Budgets</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <div class="page">
+      <header class="page-header">
+        <div class="title-row">
+          <div>
+            <h1>Feedback</h1>
+            <p class="subtitle">How the app tells you what happened: flash messages, alerts, confirmations and loading.</p>
+          </div>
+        </div>
+      </header>
+
+      <section class="section">
+        <header><h2>Flash messages</h2><span class="small muted">Result of an action you just took. Shown in the app header, stays until dismissed or replaced.</span></header>
+        <div class="card card-body stack">
+          <div class="cluster">
+            <button data-demo-flash="success|Budget updated">Success</button>
+            <button data-demo-flash="info|Import queued — 41 transactions">Info</button>
+            <button data-demo-flash="warning|3 transactions skipped as duplicates">Warning</button>
+            <button data-demo-flash="danger|Couldn't save: database is locked">Error</button>
+          </div>
+          <div class="stack gap-2">
+            <div class="flash success"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg><span>Budget updated</span><button type="button" class="dismiss" data-dismiss aria-label="Dismiss">×</button></div>
+            <div class="flash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg><span>Import queued — 41 transactions</span><button type="button" class="dismiss" data-dismiss aria-label="Dismiss">×</button></div>
+            <div class="flash warning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg><span>3 transactions skipped as duplicates</span><button type="button" class="dismiss" data-dismiss aria-label="Dismiss">×</button></div>
+            <div class="flash danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg><span>Couldn't save: database is locked</span><button type="button" class="dismiss" data-dismiss aria-label="Dismiss">×</button></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <header><h2>Alerts</h2><span class="small muted">A condition of the page itself. Shown in the page, above the content it concerns.</span></header>
+        <div class="alert"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg><div><strong>Accrual basis</strong><span>Amortized transactions are spread across their months. <a href="#">Switch to cash basis</a>.</span></div></div>
+        <div class="alert success"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg><div>All 41 transactions are reviewed.</div></div>
+        <div class="alert warning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg><div><strong>Auto-categorization unavailable</strong><span>The LLM provider didn't respond. Categorize this batch manually.</span></div></div>
+        <div class="alert danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg><div><strong>Import failed</strong><span>Row 14: expected 5 columns, found 3.</span></div></div>
+      </section>
+
+      <section class="section">
+        <header><h2>Confirm dialog</h2><span class="small muted">The only modal: a native &lt;dialog&gt; from design.js, used to confirm destructive or hard-to-undo actions.</span></header>
+        <div class="card card-body cluster">
+          <button class="danger" data-confirm="The Groceries budget will be removed. Transactions are not affected." data-confirm-title="Delete budget?" data-confirm-label="Delete" data-demo-flash="success|Budget deleted"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>Delete (data-confirm)</button>
+          <button data-confirm="Unsaved changes on this page will be lost." data-confirm-title="Leave page?" data-confirm-label="Leave" data-confirm-tone="primary" data-demo-flash="info|Left the page">Primary tone</button>
+          <button data-demo-confirm-js>From script: design.confirm()</button>
+        </div>
+        <pre><code>&lt;!-- htmx: unchanged templates, design.js swaps in the dialog --&gt;
+&lt;button hx-delete="/ui/budgets/3" hx-target="closest tr" hx-swap="outerHTML"
+        hx-confirm="The Groceries budget will be removed."
+        data-confirm-title="Delete budget?" data-confirm-label="Delete"&gt;Delete&lt;/button&gt;</code></pre>
+      </section>
+
+      <section class="section">
+        <header><h2>Loading</h2><span class="small muted">htmx adds <code>.htmx-request</code> to the element making a request; buttons show a spinner.</span></header>
+        <div class="card card-body cluster gap-4">
+          <button class="primary" data-demo-busy>Save (click me)</button>
+          <button data-demo-busy>Refresh (click me)</button>
+          <span class="cluster gap-2 small muted"><span class="spinner"></span>Loading transactions…</span>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+</body>
+</html>

@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Foundations · Design guide</title>
+  <link rel="stylesheet" href="../design.css">
+  <link rel="stylesheet" href="../themes.css">
+  <link rel="stylesheet" href="demo.css">
+  <script src="../design.js" defer></script>
+  <script src="demo.js"></script>
+</head>
+<body class="app">
+
+  <header class="app-header">
+    <a class="brand" href="index.html"><span class="brand-mark">D</span>Design guide</a>
+    <div id="flash" class="flash-region" role="status" aria-live="polite"></div>
+    <select class="w-auto" data-demo-theme-select aria-label="Theme">
+      <option value="default">Default</option>
+      <option value="slate">Slate</option>
+      <option value="stone">Stone</option>
+      <option value="github">GitHub</option>
+      <option value="solarized">Solarized</option>
+      <option value="gruvbox">Gruvbox</option>
+      <option value="nord">Nord</option>
+      <option value="catppuccin">Catppuccin</option>
+      <option value="rose-pine">Rosé Pine</option>
+      <option value="tokyo-night">Tokyo Night</option>
+      <option value="dracula">Dracula</option>
+      <option value="one">One</option>
+      <option value="everforest">Everforest</option>
+      <option value="kanagawa">Kanagawa</option>
+      <option value="sepia">Sepia</option>
+    </select>
+    <button type="button" class="ghost small" data-demo-mode title="Cycle mode: auto / light / dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg><span class="label hide-narrow">auto</span></button>
+  </header>
+
+  <nav class="sidenav" aria-label="Main">
+    <h2>Demo</h2>
+    <ul>
+        <li><a href="index.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7V5h16v2M9 19h6M12 5v14"/></svg><span>Foundations</span></a></li>
+        <li><a href="shell.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/></svg><span>Shell</span></a></li>
+        <li><a href="lists.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 10v10"/></svg><span>Lists</span></a></li>
+        <li><a href="forms.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg><span>Forms</span></a></li>
+        <li><a href="feedback.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 003.4 0"/></svg><span>Feedback</span></a></li>
+    </ul>
+    <h2 class="hide-narrow">Example app</h2>
+    <ul class="hide-narrow">
+      <li><a href="lists.html#table-view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 10v10"/></svg>Transactions <span class="count">214</span></a></li>
+      <li><a href="lists.html#tile-view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>Albums <span class="count">38</span></a></li>
+      <li><a href="forms.html#inline-form"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Budgets</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <div class="page">
+      <header class="page-header">
+        <div class="title-row">
+          <div>
+            <h1>Foundations</h1>
+            <p class="subtitle">Tokens and the smallest building blocks. Everything else is made of these.</p>
+          </div>
+        </div>
+      </header>
+
+      <div class="card">
+        <div class="card-body cluster gap-4">
+          <label for="hue" class="small">Accent hue <span class="muted num" data-demo-hue-value>263</span></label>
+          <input id="hue" type="range" min="0" max="360" step="1" data-demo-hue style="max-width: 20rem">
+          <span class="small muted">Default theme only. Per-app override: <code>:root { --accent-hue: 160; }</code></span>
+        </div>
+      </div>
+
+      <section class="section" id="themes">
+        <header><h2>Themes</h2><span class="small muted">Each shown in light and dark. Click one to apply it to the whole demo.</span></header>
+        <div class="theme-grid">
+          <button type="button" class="theme-card" data-theme="default" data-demo-set-theme="default" aria-label="Use Default theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Default</span><span class="xsmall muted">Neutral gray with blue</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="slate" data-demo-set-theme="slate" aria-label="Use Slate theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Slate</span><span class="xsmall muted">Cool blue-gray with indigo</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="stone" data-demo-set-theme="stone" aria-label="Use Stone theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Stone</span><span class="xsmall muted">Warm neutral with orange</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="github" data-demo-set-theme="github" aria-label="Use GitHub theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">GitHub</span><span class="xsmall muted">GitHub's Primer colours</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="solarized" data-demo-set-theme="solarized" aria-label="Use Solarized theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Solarized</span><span class="xsmall muted">Ethan Schoonover's classic</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="gruvbox" data-demo-set-theme="gruvbox" aria-label="Use Gruvbox theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Gruvbox</span><span class="xsmall muted">Retro, warm and earthy</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="nord" data-demo-set-theme="nord" aria-label="Use Nord theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Nord</span><span class="xsmall muted">Arctic, north-bluish</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="catppuccin" data-demo-set-theme="catppuccin" aria-label="Use Catppuccin theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Catppuccin</span><span class="xsmall muted">Soothing pastels (Latte / Mocha)</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="rose-pine" data-demo-set-theme="rose-pine" aria-label="Use Rosé Pine theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Rosé Pine</span><span class="xsmall muted">Muted, soho vibes (Dawn / Main)</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="tokyo-night" data-demo-set-theme="tokyo-night" aria-label="Use Tokyo Night theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Tokyo Night</span><span class="xsmall muted">Neon city at night (Day / Night)</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="dracula" data-demo-set-theme="dracula" aria-label="Use Dracula theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Dracula</span><span class="xsmall muted">Dark purple classic, with a light companion</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="one" data-demo-set-theme="one" aria-label="Use One theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">One</span><span class="xsmall muted">Atom's One Light / One Dark</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="everforest" data-demo-set-theme="everforest" aria-label="Use Everforest theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Everforest</span><span class="xsmall muted">Green, comfortable and calm</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="kanagawa" data-demo-set-theme="kanagawa" aria-label="Use Kanagawa theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Kanagawa</span><span class="xsmall muted">After Hokusai's Great Wave (Lotus / Wave)</span></div>
+          </button>
+          <button type="button" class="theme-card" data-theme="sepia" data-demo-set-theme="sepia" aria-label="Use Sepia theme">
+            <div class="tp"><div class="tp-half" data-mode="light">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div><div class="tp-half" data-mode="dark">
+              <div class="tp-surface">
+                <div class="tp-title">Budget</div>
+                <div class="tp-muted">Monthly · $800</div>
+                <div class="tp-row"><span class="tp-btn">Save</span><span class="tp-link">Cancel</span></div>
+                <div class="tp-row"><span class="tp-dot" style="background:var(--color-success)"></span><span class="tp-dot" style="background:var(--color-warning)"></span><span class="tp-dot" style="background:var(--color-danger)"></span></div>
+              </div>
+            </div></div>
+            <div class="tc-label"><span class="medium">Sepia</span><span class="xsmall muted">Paper and ink, easy on the eyes</span></div>
+          </button>
+        </div>
+        <p class="small muted">Apps choose a theme with <code>&lt;html data-theme="nord"&gt;</code> and load <code>themes.css</code> after <code>design.css</code>. Light/dark follows the system unless <code>data-mode="light|dark"</code> is set.</p>
+      </section>
+
+      <section class="section">
+        <header><h2>Colour</h2><span class="small muted">Semantic tokens; each has a light and a dark value.</span></header>
+        <div class="grid gap-3" style="--min: 13rem">
+          <div class="cluster gap-3"><span class="thumb sm" style="background: var(--color-bg); outline: 1px solid var(--color-border-strong); outline-offset: -1px"></span>
+            <div><div class="medium">bg</div><div class="xsmall mono muted">--color-bg</div></div></div>
+          <div class="cluster gap-3"><span class="thumb sm" style="background: var(--color-surface); outline: 1px solid var(--color-border-strong); outline-offset: -1px"></span>
+            <div><div class="medium">surface</div><div class="xsmall mono muted">--color-surface</div></div></div>
+          <div class="cluster gap-3"><span class="thumb sm" style="background: var(--color-surface-sunken); outline: 1px solid var(--color-border-strong); outline-offset: -1px"></span>
+            <div><div class="medium">surface-sunken</div><div class="xsmall mono muted">--color-surface-sunken</div></div></div>
+          <div class="cluster gap-3"><span class="thumb sm" style="background: var(--color-border); outline: 1px solid var(--color-border-strong); outline-offset: -1px"></span>
+            <div><div class="medium">border</div><div class="xsmall mono muted">--color-border</div></div></div>
+          <div class="cluster gap-3"><span class="thumb sm" style="background: var(--color-border-strong); outline: 1px solid var(--color-border-strong); outline-offset: -1px"></span>
+            <div><div class="medium">border-strong</div><div class="xsmall mono muted">--color-border-strong</div></div></div>
+          <div class="cluster gap-3"><span class="thumb sm" style="background: var(--color-text); outline: 1px solid var(--color-border-strong); outline-offset: -1px"></span>
+            <div><div class="medium">text</div><div class="xsmall mono muted">--color-text</div></div></div>
+          <div class="cluster gap-3"><span class="thumb sm" style="background: var(--color-text-muted); outline: 1px solid var(--color-border-strong); outline-offset: -1px"></span>
+            <div><div class="medium">text-muted</div><div class="xsmall mono muted">--color-text-muted</div></div></div>
+          <div class="cluster gap-3"><span class="thumb sm" style="background: var(--color-text-subtle); outline: 1px solid var(--color-border-strong); outline-offset: -1px"></span>
+            <div><div class="medium">text-subtle</div><div class="xsmall mono muted">--color-text-subtle</div></div></div>
+          <div class="cluster gap-3"><span class="thumb sm" style="background: var(--color-accent); outline: 1px solid var(--color-border-strong); outline-offset: -1px"></span>
+            <div><div class="medium">accent</div><div class="xsmall mono muted">--color-accent</div></div></div>
+          <div class="cluster gap-3"><span class="thumb sm" style="background: var(--color-accent-soft); outline: 1px solid var(--color-border-strong); outline-offset: -1px"></span>
+            <div><div class="medium">accent-soft</div><div class="xsmall mono muted">--color-accent-soft</div></div></div>
+          <div class="cluster gap-3"><span class="thumb sm" style="background: var(--color-link); outline: 1px solid var(--color-border-strong); outline-offset: -1px"></span>
+            <div><div class="medium">link</div><div class="xsmall mono muted">--color-link</div></div></div>
+          <div class="cluster gap-3"><span class="thumb sm" style="background: var(--color-success); outline: 1px solid var(--color-border-strong); outline-offset: -1px"></span>
+            <div><div class="medium">success</div><div class="xsmall mono muted">--color-success</div></div></div>
+          <div class="cluster gap-3"><span class="thumb sm" style="background: var(--color-warning); outline: 1px solid var(--color-border-strong); outline-offset: -1px"></span>
+            <div><div class="medium">warning</div><div class="xsmall mono muted">--color-warning</div></div></div>
+          <div class="cluster gap-3"><span class="thumb sm" style="background: var(--color-danger); outline: 1px solid var(--color-border-strong); outline-offset: -1px"></span>
+            <div><div class="medium">danger</div><div class="xsmall mono muted">--color-danger</div></div></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <header><h2>Typography</h2><span class="small muted">Inter for UI, JetBrains Mono for code and IDs.</span></header>
+        <div class="card">
+          <table>
+            <thead><tr><th>Token</th><th class="num">Size</th><th>Sample</th><th>Used for</th></tr></thead>
+            <tbody>
+            <tr><td class="nowrap mono xsmall muted">--text-2xl</td><td class="num muted small">30px</td>
+              <td style="font-size: var(--text-2xl); font-weight: 600">Big numbers</td><td class="muted small">Stat values</td></tr>
+            <tr><td class="nowrap mono xsmall muted">--text-xl</td><td class="num muted small">24px</td>
+              <td style="font-size: var(--text-xl); font-weight: 600">Page title</td><td class="muted small">h1</td></tr>
+            <tr><td class="nowrap mono xsmall muted">--text-lg</td><td class="num muted small">18px</td>
+              <td style="font-size: var(--text-lg); font-weight: 600">Section title</td><td class="muted small">h2</td></tr>
+            <tr><td class="nowrap mono xsmall muted">--text-md</td><td class="num muted small">16px</td>
+              <td style="font-size: var(--text-md); font-weight: 600">Subsection title</td><td class="muted small">h3, card titles</td></tr>
+            <tr><td class="nowrap mono xsmall muted">--text-base</td><td class="num muted small">14px</td>
+              <td style="font-size: var(--text-base); font-weight: 400">Body text and controls</td><td class="muted small">default</td></tr>
+            <tr><td class="nowrap mono xsmall muted">--text-sm</td><td class="num muted small">13px</td>
+              <td style="font-size: var(--text-sm); font-weight: 400">Metadata, hints, secondary text</td><td class="muted small">.small</td></tr>
+            <tr><td class="nowrap mono xsmall muted">--text-xs</td><td class="num muted small">12px</td>
+              <td style="font-size: var(--text-xs); font-weight: 400">BADGES, TABLE HEADERS</td><td class="muted small">.xsmall</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="grid">
+          <div class="card card-body stack gap-2">
+            <h3>Inter</h3>
+            <p>The quick brown fox jumps over the lazy dog. <em>Italic for emphasis</em>, <strong>semibold for strong</strong>, <span class="medium">medium for labels</span>.</p>
+            <p class="small muted">Tabular figures keep columns aligned:</p>
+            <div class="num" style="font-size: var(--text-md)">$1,111.11<br>$8,040.70<br>$&#8199;&#8199;999.00</div>
+          </div>
+          <div class="card card-body stack gap-2">
+            <h3>JetBrains Mono</h3>
+            <p class="mono">txn_01HZX3K9 · 2026-11-23T17:57:00Z</p>
+            <pre><code>@layer reset, tokens, base,
+       layout, components, utilities;</code></pre>
+            <p>Inline <code>code</code> and keys like <kbd>Esc</kbd>.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <header><h2>Spacing</h2><span class="small muted">Use only these steps for margins, gaps and padding.</span></header>
+        <div class="card card-body stack gap-2">
+            <div class="cluster gap-3"><code class="w-auto" style="min-width:5.5rem">--space-1</code><span class="small muted num" style="min-width:2.5rem">4px</span>
+              <span style="display:block;height:0.75rem;width:var(--space-1);background:var(--color-accent);border-radius:2px"></span></div>
+            <div class="cluster gap-3"><code class="w-auto" style="min-width:5.5rem">--space-2</code><span class="small muted num" style="min-width:2.5rem">8px</span>
+              <span style="display:block;height:0.75rem;width:var(--space-2);background:var(--color-accent);border-radius:2px"></span></div>
+            <div class="cluster gap-3"><code class="w-auto" style="min-width:5.5rem">--space-3</code><span class="small muted num" style="min-width:2.5rem">12px</span>
+              <span style="display:block;height:0.75rem;width:var(--space-3);background:var(--color-accent);border-radius:2px"></span></div>
+            <div class="cluster gap-3"><code class="w-auto" style="min-width:5.5rem">--space-4</code><span class="small muted num" style="min-width:2.5rem">16px</span>
+              <span style="display:block;height:0.75rem;width:var(--space-4);background:var(--color-accent);border-radius:2px"></span></div>
+            <div class="cluster gap-3"><code class="w-auto" style="min-width:5.5rem">--space-5</code><span class="small muted num" style="min-width:2.5rem">24px</span>
+              <span style="display:block;height:0.75rem;width:var(--space-5);background:var(--color-accent);border-radius:2px"></span></div>
+            <div class="cluster gap-3"><code class="w-auto" style="min-width:5.5rem">--space-6</code><span class="small muted num" style="min-width:2.5rem">32px</span>
+              <span style="display:block;height:0.75rem;width:var(--space-6);background:var(--color-accent);border-radius:2px"></span></div>
+            <div class="cluster gap-3"><code class="w-auto" style="min-width:5.5rem">--space-7</code><span class="small muted num" style="min-width:2.5rem">48px</span>
+              <span style="display:block;height:0.75rem;width:var(--space-7);background:var(--color-accent);border-radius:2px"></span></div>
+            <div class="cluster gap-3"><code class="w-auto" style="min-width:5.5rem">--space-8</code><span class="small muted num" style="min-width:2.5rem">64px</span>
+              <span style="display:block;height:0.75rem;width:var(--space-8);background:var(--color-accent);border-radius:2px"></span></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <header><h2>Radius &amp; elevation</h2></header>
+        <div class="cluster gap-4">
+          <div class="card card-body small" style="border-radius: var(--radius-sm); box-shadow: none">--radius-sm · flat</div>
+          <div class="card card-body small" style="border-radius: var(--radius)">--radius · --shadow-sm</div>
+          <div class="card card-body small" style="box-shadow: var(--shadow)">--radius-lg · --shadow</div>
+          <div class="card card-body small" style="box-shadow: var(--shadow-lg)">--shadow-lg (dialogs, sticky bars)</div>
+        </div>
+      </section>
+
+      <section class="section">
+        <header><h2>Buttons</h2><span class="small muted">One primary action per area. The bare &lt;button&gt; is secondary.</span></header>
+        <div class="card card-body stack">
+          <div class="cluster">
+            <button class="primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Primary</button>
+            <button>Secondary</button>
+            <button class="ghost">Ghost</button>
+            <button class="danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>Danger</button>
+            <button class="ghost danger-text">Ghost danger</button>
+            <button class="link">Link button</button>
+            <a class="button" href="#">Link as button</a>
+          </div>
+          <div class="cluster">
+            <button class="primary small">Small primary</button>
+            <button class="small">Small</button>
+            <button class="icon" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
+            <button class="icon small ghost" aria-label="More"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button>
+            <button class="primary" disabled>Disabled</button>
+            <button class="primary" data-demo-busy>Click: busy state</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <header><h2>Badges &amp; inline text</h2></header>
+        <div class="card card-body stack gap-3">
+          <div class="cluster">
+            <span class="badge">neutral</span>
+            <span class="badge info">info</span>
+            <span class="badge success">reviewed</span>
+            <span class="badge warning">pending</span>
+            <span class="badge danger">failed</span>
+            <span class="badge success dot">online</span>
+          </div>
+          <p>A <a href="#">text link</a>, some <span class="muted">muted</span> and <span class="subtle">subtle</span> text, a <mark>highlight</mark>, and an amount in <span class="danger-text num">−$42.10</span> or <span class="success-text num">+$1,200.00</span>.</p>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+</body>
+</html>

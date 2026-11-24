@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Lists & data · Design guide</title>
+  <link rel="stylesheet" href="../design.css">
+  <link rel="stylesheet" href="../themes.css">
+  <link rel="stylesheet" href="demo.css">
+  <script src="../design.js" defer></script>
+  <script src="demo.js"></script>
+</head>
+<body class="app">
+
+  <header class="app-header">
+    <a class="brand" href="index.html"><span class="brand-mark">D</span>Design guide</a>
+    <div id="flash" class="flash-region" role="status" aria-live="polite"></div>
+    <select class="w-auto" data-demo-theme-select aria-label="Theme">
+      <option value="default">Default</option>
+      <option value="slate">Slate</option>
+      <option value="stone">Stone</option>
+      <option value="github">GitHub</option>
+      <option value="solarized">Solarized</option>
+      <option value="gruvbox">Gruvbox</option>
+      <option value="nord">Nord</option>
+      <option value="catppuccin">Catppuccin</option>
+      <option value="rose-pine">Rosé Pine</option>
+      <option value="tokyo-night">Tokyo Night</option>
+      <option value="dracula">Dracula</option>
+      <option value="one">One</option>
+      <option value="everforest">Everforest</option>
+      <option value="kanagawa">Kanagawa</option>
+      <option value="sepia">Sepia</option>
+    </select>
+    <button type="button" class="ghost small" data-demo-mode title="Cycle mode: auto / light / dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg><span class="label hide-narrow">auto</span></button>
+  </header>
+
+  <nav class="sidenav" aria-label="Main">
+    <h2>Demo</h2>
+    <ul>
+        <li><a href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7V5h16v2M9 19h6M12 5v14"/></svg><span>Foundations</span></a></li>
+        <li><a href="shell.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/></svg><span>Shell</span></a></li>
+        <li><a href="lists.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 10v10"/></svg><span>Lists</span></a></li>
+        <li><a href="forms.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg><span>Forms</span></a></li>
+        <li><a href="feedback.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 003.4 0"/></svg><span>Feedback</span></a></li>
+    </ul>
+    <h2 class="hide-narrow">Example app</h2>
+    <ul class="hide-narrow">
+      <li><a href="lists.html#table-view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 10v10"/></svg>Transactions <span class="count">214</span></a></li>
+      <li><a href="lists.html#tile-view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>Albums <span class="count">38</span></a></li>
+      <li><a href="forms.html#inline-form"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Budgets</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <div class="page">
+      <header class="page-header">
+        <div class="title-row">
+          <div>
+            <h1>Lists &amp; data</h1>
+            <p class="subtitle">Four views of a collection, plus empty states and summary displays.</p>
+          </div>
+        </div>
+      </header>
+
+      <section class="section" id="table-view">
+        <header><h2>Table view</h2><span class="small muted">Rows with comparable columns. Transactions, accounts, budgets.</span></header>
+        <div class="card scroll-x">
+          <table class="hover responsive">
+            <thead><tr><th>Date</th><th class="hide-narrow">Description</th><th>Merchant</th><th>Category</th><th class="num">Amount</th></tr></thead>
+            <tbody>
+            <tr><td class="nowrap muted">2026-11-23</td><td class="hide-narrow">REI #2551</td>
+              <td class="primary-cell">REI</td><td>Outdoors</td><td class="num">$43.81</td></tr>
+            <tr><td class="nowrap muted">2026-11-22</td><td class="hide-narrow">UBER #4180</td>
+              <td class="primary-cell">Uber</td><td>Transport</td><td class="num">$13.65</td></tr>
+            <tr><td class="nowrap muted">2026-11-21</td><td class="hide-narrow">SAFEWAY #8771</td>
+              <td class="primary-cell">Safeway</td><td><em class="muted">Groceries</em></td><td class="num">$239.44</td></tr>
+            <tr><td class="nowrap muted">2026-11-20</td><td class="hide-narrow">BLUE BOTTLE #3381</td>
+              <td class="primary-cell">Blue Bottle</td><td>Coffee</td><td class="num">$186.61</td></tr>
+            <tr><td class="nowrap muted">2026-11-19</td><td class="hide-narrow">COMCAST #8159</td>
+              <td class="primary-cell">Comcast</td><td>Internet</td><td class="num">$51.62</td></tr>
+            <tr><td class="nowrap muted">2026-11-18</td><td class="hide-narrow">TRADER JOES #7109</td>
+              <td class="primary-cell">Trader Joe's</td><td>Groceries</td><td class="num">$55.70</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="4">Total</td><td class="num">$612.40</td></tr></tfoot>
+          </table>
+        </div>
+        <p class="small muted"><em>Italic muted</em> category = suggested, not yet confirmed. Numbers are right-aligned with <code>.num</code>.</p>
+      </section>
+
+      <section class="section" id="list-view">
+        <header><h2>List view</h2><span class="small muted">One column of items that don't break into columns. Imports, notes, logs.</span></header>
+        <ul class="item-list" role="list">
+          <li><a class="item" href="#"><span class="thumb sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z"/><path d="M14 3v6h6"/></svg></span>
+            <div class="item-body"><div class="item-title">amex_2026-11.csv</div><div class="item-meta">amex · 64 transactions</div></div>
+            <div class="item-end"><span class="badge success">reviewed</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></div></a></li>
+          <li><a class="item" href="#"><span class="thumb sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z"/><path d="M14 3v6h6"/></svg></span>
+            <div class="item-body"><div class="item-title">bofa_checking_2026-11.csv</div><div class="item-meta">bofa_checking · 41 transactions</div></div>
+            <div class="item-end"><span class="badge warning">12 to review</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></div></a></li>
+          <li><a class="item" href="#"><span class="thumb sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z"/><path d="M14 3v6h6"/></svg></span>
+            <div class="item-body"><div class="item-title">chase_2026-10.csv</div><div class="item-meta">chase · 58 transactions</div></div>
+            <div class="item-end"><span class="badge success">reviewed</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></div></a></li>
+          <li><a class="item" href="#"><span class="thumb sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z"/><path d="M14 3v6h6"/></svg></span>
+            <div class="item-body"><div class="item-title">discover_2026-10.csv</div><div class="item-meta">discover · 0 transactions</div></div>
+            <div class="item-end"><span class="badge danger">parse error</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></div></a></li>
+        </ul>
+      </section>
+
+      <section class="section" id="tile-view">
+        <header>
+          <h2>Albums: tile, gallery and table views</h2>
+          <div class="segmented" role="group" aria-label="View" data-demo-views="albums">
+            <button data-view="tiles" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="7" height="7" rx="1"/><rect x="3" y="13" width="7" height="7" rx="1"/><path d="M13 6h8M13 9h5M13 15h8M13 18h5"/></svg>Tiles</button>
+            <button data-view="gallery" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Gallery</button>
+            <button data-view="table" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 10v10"/></svg>Table</button>
+          </div>
+        </header>
+        <div id="albums">
+          <ul class="tiles" role="list" data-view-pane="tiles">
+          <li><a class="tile" href="#"><span class="thumb" style="--hue: 263">WY</span>
+            <div class="item-body"><div class="item-title">Wish You Were Here</div><div class="item-meta">Pink Floyd</div><div class="item-meta">1975 · 14 tracks</div></div></a></li>
+          <li><a class="tile" href="#"><span class="thumb" style="--hue: 215">KO</span>
+            <div class="item-body"><div class="item-title">Kind of Blue</div><div class="item-meta">Miles Davis</div><div class="item-meta">1959 · 6 tracks</div></div></a></li>
+          <li><a class="tile" href="#"><span class="thumb" style="--hue: 200">BT</span>
+            <div class="item-body"><div class="item-title">Blue Train</div><div class="item-meta">John Coltrane</div><div class="item-meta">1958 · 12 tracks</div></div></a></li>
+          <li><a class="tile" href="#"><span class="thumb" style="--hue: 30">OC</span>
+            <div class="item-body"><div class="item-title">OK Computer</div><div class="item-meta">Radiohead</div><div class="item-meta">1997 · 8 tracks</div></div></a></li>
+          <li><a class="tile" href="#"><span class="thumb" style="--hue: 330">R</span>
+            <div class="item-body"><div class="item-title">Rumours</div><div class="item-meta">Fleetwood Mac</div><div class="item-meta">1977 · 11 tracks</div></div></a></li>
+          <li><a class="tile" href="#"><span class="thumb" style="--hue: 50">RI</span>
+            <div class="item-body"><div class="item-title">Remain in Light</div><div class="item-meta">Talking Heads</div><div class="item-meta">1980 · 8 tracks</div></div></a></li>
+          <li><a class="tile" href="#"><span class="thumb" style="--hue: 300">D</span>
+            <div class="item-body"><div class="item-title">Discovery</div><div class="item-meta">Daft Punk</div><div class="item-meta">2001 · 6 tracks</div></div></a></li>
+          <li><a class="tile" href="#"><span class="thumb" style="--hue: 140">IR</span>
+            <div class="item-body"><div class="item-title">In Rainbows</div><div class="item-meta">Radiohead</div><div class="item-meta">2007 · 5 tracks</div></div></a></li>
+          <li><a class="tile" href="#"><span class="thumb" style="--hue: 90">AR</span>
+            <div class="item-body"><div class="item-title">Abbey Road</div><div class="item-meta">The Beatles</div><div class="item-meta">1969 · 5 tracks</div></div></a></li>
+          <li><a class="tile" href="#"><span class="thumb" style="--hue: 0">HO</span>
+            <div class="item-body"><div class="item-title">Hounds of Love</div><div class="item-meta">Kate Bush</div><div class="item-meta">1985 · 5 tracks</div></div></a></li>
+          </ul>
+          <ul class="gallery" role="list" data-view-pane="gallery" hidden>
+          <li><a class="gallery-item" href="#"><span class="thumb" style="--hue: 263">WY</span>
+            <div><div class="item-title">Wish You Were Here</div><div class="item-meta">Pink Floyd · 1975</div></div></a></li>
+          <li><a class="gallery-item" href="#"><span class="thumb" style="--hue: 215">KO</span>
+            <div><div class="item-title">Kind of Blue</div><div class="item-meta">Miles Davis · 1959</div></div></a></li>
+          <li><a class="gallery-item" href="#"><span class="thumb" style="--hue: 200">BT</span>
+            <div><div class="item-title">Blue Train</div><div class="item-meta">John Coltrane · 1958</div></div></a></li>
+          <li><a class="gallery-item" href="#"><span class="thumb" style="--hue: 30">OC</span>
+            <div><div class="item-title">OK Computer</div><div class="item-meta">Radiohead · 1997</div></div></a></li>
+          <li><a class="gallery-item" href="#"><span class="thumb" style="--hue: 330">R</span>
+            <div><div class="item-title">Rumours</div><div class="item-meta">Fleetwood Mac · 1977</div></div></a></li>
+          <li><a class="gallery-item" href="#"><span class="thumb" style="--hue: 50">RI</span>
+            <div><div class="item-title">Remain in Light</div><div class="item-meta">Talking Heads · 1980</div></div></a></li>
+          <li><a class="gallery-item" href="#"><span class="thumb" style="--hue: 300">D</span>
+            <div><div class="item-title">Discovery</div><div class="item-meta">Daft Punk · 2001</div></div></a></li>
+          <li><a class="gallery-item" href="#"><span class="thumb" style="--hue: 140">IR</span>
+            <div><div class="item-title">In Rainbows</div><div class="item-meta">Radiohead · 2007</div></div></a></li>
+          <li><a class="gallery-item" href="#"><span class="thumb" style="--hue: 90">AR</span>
+            <div><div class="item-title">Abbey Road</div><div class="item-meta">The Beatles · 1969</div></div></a></li>
+          <li><a class="gallery-item" href="#"><span class="thumb" style="--hue: 0">HO</span>
+            <div><div class="item-title">Hounds of Love</div><div class="item-meta">Kate Bush · 1985</div></div></a></li>
+          </ul>
+          <div class="card" data-view-pane="table" hidden>
+            <table class="hover responsive">
+              <thead><tr><th>Title</th><th>Artist</th><th class="num">Year</th></tr></thead>
+              <tbody>
+              <tr><td class="primary-cell"><span class="cluster gap-3"><span class="thumb sm" style="--hue: 263">WY</span><a class="row-link" href="#">Wish You Were Here</a></span></td><td>Pink Floyd</td><td class="num">1975</td></tr>
+              <tr><td class="primary-cell"><span class="cluster gap-3"><span class="thumb sm" style="--hue: 215">KO</span><a class="row-link" href="#">Kind of Blue</a></span></td><td>Miles Davis</td><td class="num">1959</td></tr>
+              <tr><td class="primary-cell"><span class="cluster gap-3"><span class="thumb sm" style="--hue: 200">BT</span><a class="row-link" href="#">Blue Train</a></span></td><td>John Coltrane</td><td class="num">1958</td></tr>
+              <tr><td class="primary-cell"><span class="cluster gap-3"><span class="thumb sm" style="--hue: 30">OC</span><a class="row-link" href="#">OK Computer</a></span></td><td>Radiohead</td><td class="num">1997</td></tr>
+              <tr><td class="primary-cell"><span class="cluster gap-3"><span class="thumb sm" style="--hue: 330">R</span><a class="row-link" href="#">Rumours</a></span></td><td>Fleetwood Mac</td><td class="num">1977</td></tr>
+              <tr><td class="primary-cell"><span class="cluster gap-3"><span class="thumb sm" style="--hue: 50">RI</span><a class="row-link" href="#">Remain in Light</a></span></td><td>Talking Heads</td><td class="num">1980</td></tr>
+              <tr><td class="primary-cell"><span class="cluster gap-3"><span class="thumb sm" style="--hue: 300">D</span><a class="row-link" href="#">Discovery</a></span></td><td>Daft Punk</td><td class="num">2001</td></tr>
+              <tr><td class="primary-cell"><span class="cluster gap-3"><span class="thumb sm" style="--hue: 140">IR</span><a class="row-link" href="#">In Rainbows</a></span></td><td>Radiohead</td><td class="num">2007</td></tr>
+              <tr><td class="primary-cell"><span class="cluster gap-3"><span class="thumb sm" style="--hue: 90">AR</span><a class="row-link" href="#">Abbey Road</a></span></td><td>The Beatles</td><td class="num">1969</td></tr>
+              <tr><td class="primary-cell"><span class="cluster gap-3"><span class="thumb sm" style="--hue: 0">HO</span><a class="row-link" href="#">Hounds of Love</a></span></td><td>Kate Bush</td><td class="num">1985</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="gallery-view">
+        <header><h2>Gallery view, large</h2><span class="small muted"><code>.gallery.large</code> with 4:3 thumbnails, for photos.</span></header>
+        <ul class="gallery large" role="list">
+          <li><a class="gallery-item" href="#"><span class="thumb wide" style="--hue: 200"></span>
+            <div><div class="item-title">Lake Tahoe</div><div class="item-meta">Aug 2026 · 48 photos</div></div></a></li>
+          <li><a class="gallery-item" href="#"><span class="thumb wide" style="--hue: 40"></span>
+            <div><div class="item-title">Pune, Diwali</div><div class="item-meta">Nov 2026 · 112 photos</div></div></a></li>
+          <li><a class="gallery-item" href="#"><span class="thumb wide" style="--hue: 170"></span>
+            <div><div class="item-title">Big Sur</div><div class="item-meta">Jun 2026 · 23 photos</div></div></a></li>
+          <li><a class="gallery-item" href="#"><span class="thumb wide" style="--hue: 120"></span>
+            <div><div class="item-title">Yosemite</div><div class="item-meta">May 2026 · 61 photos</div></div></a></li>
+          <li><a class="gallery-item" href="#"><span class="thumb wide" style="--hue: 280"></span>
+            <div><div class="item-title">Home</div><div class="item-meta">2026 · 340 photos</div></div></a></li>
+          <li><a class="gallery-item" href="#"><span class="thumb wide" style="--hue: 15"></span>
+            <div><div class="item-title">Mumbai</div><div class="item-meta">Dec 2025 · 87 photos</div></div></a></li>
+        </ul>
+      </section>
+
+      <section class="section">
+        <header><h2>Empty states</h2><span class="small muted">Say what's missing and offer the action that fixes it.</span></header>
+        <div class="grid">
+          <div class="empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>
+            <h3>No transactions for November 2026</h3>
+            <p>Import a statement to get started.</p>
+            <button class="primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M17 8l-5-5-5 5M12 3v12"/></svg>Import transactions</button>
+          </div>
+          <div class="empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <h3>No matches</h3>
+            <p>Nothing matches “coffe”. <button class="link">Clear search</button></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <header><h2>Summary displays</h2><span class="small muted">Stats for headline numbers; key–value lists for details.</span></header>
+        <div class="stats">
+          <div class="stat"><span class="label">Income</span><span class="value">$9,240.00</span><span class="delta up">+4.1% vs Oct</span></div>
+          <div class="stat"><span class="label">Expenses</span><span class="value">$6,118.52</span><span class="delta down">+12.8% vs Oct</span></div>
+          <div class="stat"><span class="label">Net</span><span class="value">$3,121.48</span><span class="delta">33.8% saved</span></div>
+          <div class="stat"><span class="label">To review</span><span class="value">12</span><span class="delta">from 1 import</span></div>
+        </div>
+        <div class="grid">
+          <div class="card">
+            <div class="card-header"><h3>Account</h3><button class="small ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>Edit</button></div>
+            <div class="card-body">
+              <dl class="kv">
+                <dt>Name</dt><dd class="mono">bofa_checking</dd>
+                <dt>Type</dt><dd>bofa</dd>
+                <dt>Description</dt><dd>Bank of America Checking</dd>
+                <dt>Status</dt><dd><span class="badge success dot">active</span></dd>
+              </dl>
+            </div>
+          </div>
+          <details class="panel" open>
+            <summary>How amounts are calculated</summary>
+            <p class="muted">Accrual basis spreads amortized transactions over their months; cash basis counts them on the posting date. A <code>details.panel</code> is the way to tuck away secondary content without a modal.</p>
+          </details>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+</body>
+</html>
