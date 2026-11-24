@@ -1,0 +1,7 @@
+# System git config for task containers (INV-5). The token is never stored:
+# the helper reads /run/secrets/github_token on each use.
+[credential "https://github.com"]
+	helper =
+	helper = /usr/local/bin/git-credential-sandbox
+[init]
+	defaultBranch = main

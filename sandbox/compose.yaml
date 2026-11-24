@@ -1,0 +1,85 @@
+# Sandbox networks, containers, limits and hardening. Every setting here is T1.
+#
+# Two kinds of Compose project use this file:
+#   sandbox-egress      the long-lived egress proxy:  docker compose -p sandbox-egress up -d egress
+#   sandbox-task-<id>   one per task, started by `task` with `docker compose run task`
+# Networks have fixed names, so all projects share them. Volumes are scoped to
+# the project, so each task gets its own (INV-13).
+
+x-hardening: &hardening
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+
+# INV-14: task limits. Change them here, or override per run from the config
+# file (SANDBOX_CPUS, SANDBOX_MEMORY, SANDBOX_PIDS).
+x-task-limits: &task-limits
+  cpus: ${SANDBOX_CPUS:-4}
+  mem_limit: ${SANDBOX_MEMORY:-8g}
+  memswap_limit: ${SANDBOX_MEMORY:-8g}
+  pids_limit: ${SANDBOX_PIDS:-1024}
+
+services:
+  egress:
+    <<: *hardening
+    build: ./egress
+    image: sandbox-egress:local
+    restart: unless-stopped
+    cpus: 1
+    mem_limit: 256m
+    pids_limit: 256
+    networks:
+      sandbox-internal:
+        ipv4_address: 172.31.250.2
+      sandbox-egress: {}
+
+  task:
+    <<: [*hardening, *task-limits]
+    build:
+      context: .
+      dockerfile: image/Dockerfile
+    image: sandbox-dev:local
+    profiles: [task]
+    init: true
+    stdin_open: true
+    tty: true
+    networks: [sandbox-internal]
+    # INV-17: the task container has no resolver. The only name it needs is
+    # the proxy's, pinned here to its static address.
+    dns: [127.0.0.1]
+    extra_hosts: ["egress:172.31.250.2"]
+    # Docker mounts tmpfs noexec by default. Test runners and build tools
+    # execute from /tmp, and /work is executable anyway, so exec is allowed.
+    tmpfs:
+      - /tmp:size=1g,mode=1777,exec
+      - /home/agent:size=1g,uid=10001,gid=10001,mode=0700,exec
+    volumes:
+      - work:/work
+      - cache:/cache
+    secrets: [github_token, claude_token]
+    environment:
+      SANDBOX_REPO: ${SANDBOX_REPO:-}
+      SANDBOX_GIT_NAME: ${SANDBOX_GIT_NAME:-}
+      SANDBOX_GIT_EMAIL: ${SANDBOX_GIT_EMAIL:-}
+
+networks:
+  sandbox-internal:
+    name: sandbox-internal
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.31.250.0/24
+  sandbox-egress:
+    name: sandbox-egress
+
+volumes:
+  work:
+  cache:
+
+# INV-1: the only host paths a task container sees. `task` stages per-task
+# copies under $XDG_RUNTIME_DIR and deletes them when the task ends.
+secrets:
+  github_token:
+    file: ${SANDBOX_GITHUB_TOKEN_FILE:-/dev/null}
+  claude_token:
+    file: ${SANDBOX_CLAUDE_TOKEN_FILE:-/dev/null}

@@ -1,0 +1,306 @@
+#!/usr/bin/env bash
+# task: start a sandboxed task container for one repo and role (stage 1).
+#
+# T1: token minting and secret handling (INV-1, INV-5, INV-7, INV-9, INV-16).
+# Secrets never appear in arguments, environment variables, or output: the
+# App JWT and the installation token go to curl through header files, and the
+# token reaches the container as a file.
+set -euo pipefail
+
+readonly EX_USAGE=64
+SANDBOX_DIR=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)
+readonly SANDBOX_DIR
+readonly COMPOSE_FILE="$SANDBOX_DIR/compose.yaml"
+readonly EGRESS_PROJECT=sandbox-egress
+readonly API=https://api.github.com
+
+usage() {
+	cat <<'EOF'
+Usage: task <owner/repo> --role implementer|reviewer [--data <dir>] [--keep]
+
+Start an ephemeral task container with <owner/repo> cloned at /work on its
+default branch, and open a shell in it.
+
+Options:
+  --role ROLE   implementer or reviewer. Chooses the GitHub App, and so the
+                token's identity and permissions.
+  --data DIR    Copy DIR into a read-only volume mounted at /task/data.
+                Everything in DIR is treated as public (INV-19).
+  --keep        On exit, stop the container and keep its volumes instead of
+                removing them.
+  -h, --help    Show this help.
+
+Configuration: ${SANDBOX_CONFIG:-~/.config/sandbox/config}, with
+  IMPLEMENTER_APP_ID, REVIEWER_APP_ID, GITHUB_USER, and optionally
+  SECRETS_DIR, SANDBOX_CPUS, SANDBOX_MEMORY, SANDBOX_PIDS.
+Secrets in SECRETS_DIR (default ~/.config/sandbox/secrets), each owned by
+you and not readable by group or others:
+  implementer_app_key, reviewer_app_key, claude_token
+
+Exit codes:
+  64    bad arguments, bad configuration or secrets, a repo that fails
+        preflight, or any failure before the shell starts
+  other the exit status of the shell
+EOF
+}
+
+die() {
+	echo "task: $*" >&2
+	exit "$EX_USAGE"
+}
+
+# --- arguments -------------------------------------------------------------
+
+repo='' role='' data_dir='' keep=0
+while (($#)); do
+	case $1 in
+	-h | --help)
+		usage
+		exit 0
+		;;
+	--role)
+		(($# >= 2)) || die "--role needs a value"
+		role=$2
+		shift 2
+		;;
+	--data)
+		(($# >= 2)) || die "--data needs a value"
+		data_dir=$2
+		shift 2
+		;;
+	--keep)
+		keep=1
+		shift
+		;;
+	-*) die "unknown option: $1 (see --help)" ;;
+	*)
+		[[ -z $repo ]] || die "unexpected argument: $1 (see --help)"
+		repo=$1
+		shift
+		;;
+	esac
+done
+
+[[ -n $repo ]] || die "missing <owner/repo> (see --help)"
+[[ $repo =~ ^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$ ]] || die "not an owner/repo: $repo"
+case $role in
+implementer) permissions='{"contents":"write","pull_requests":"write","issues":"write","metadata":"read"}' ;;
+reviewer) permissions='{"contents":"read","pull_requests":"write","issues":"write","metadata":"read"}' ;;
+"") die "missing --role (see --help)" ;;
+*) die "--role must be implementer or reviewer, not: $role" ;;
+esac
+if [[ -n $data_dir ]]; then
+	[[ -d $data_dir ]] || die "--data: not a directory: $data_dir"
+	data_dir=$(cd "$data_dir" && pwd)
+fi
+
+for cmd in docker curl jq openssl; do
+	command -v "$cmd" >/dev/null || die "$cmd not found"
+done
+
+# --- configuration and secrets (INV-16) ------------------------------------
+
+# private_file PATH: a regular file (not a symlink), non-empty, owned by the
+# current user, with no group or other permissions.
+private_file() {
+	local f=$1 owner mode
+	[[ -e $f ]] || die "missing: $f"
+	[[ ! -L $f ]] || die "must not be a symlink: $f"
+	[[ -f $f ]] || die "not a regular file: $f"
+	[[ -s $f ]] || die "empty: $f"
+	read -r owner mode < <(stat -c '%u %a' "$f")
+	[[ $owner == "$(id -u)" ]] || die "not owned by you: $f"
+	((8#$mode & 8#077)) && die "readable or writable by group or others (mode $mode): $f"
+	return 0
+}
+
+config_file=${SANDBOX_CONFIG:-$HOME/.config/sandbox/config}
+private_file "$config_file"
+
+# Parse KEY=VALUE lines without executing the file. Unknown keys are errors.
+IMPLEMENTER_APP_ID='' REVIEWER_APP_ID='' GITHUB_USER='' SECRETS_DIR=''
+SANDBOX_CPUS='' SANDBOX_MEMORY='' SANDBOX_PIDS=''
+lineno=0
+while IFS= read -r line || [[ -n $line ]]; do
+	lineno=$((lineno + 1))
+	[[ $line =~ ^[[:space:]]*(#|$) ]] && continue
+	[[ $line =~ ^([A-Z_]+)=([^[:space:]]*)$ ]] || die "$config_file:$lineno: expected KEY=VALUE"
+	key=${BASH_REMATCH[1]} value=${BASH_REMATCH[2]}
+	case $key in
+	IMPLEMENTER_APP_ID | REVIEWER_APP_ID | GITHUB_USER | SECRETS_DIR | SANDBOX_CPUS | SANDBOX_MEMORY | SANDBOX_PIDS)
+		printf -v "$key" '%s' "$value"
+		;;
+	*) die "$config_file:$lineno: unknown key: $key" ;;
+	esac
+done <"$config_file"
+
+[[ $IMPLEMENTER_APP_ID =~ ^[0-9]+$ ]] || die "$config_file: IMPLEMENTER_APP_ID must be a number"
+[[ $REVIEWER_APP_ID =~ ^[0-9]+$ ]] || die "$config_file: REVIEWER_APP_ID must be a number"
+[[ $GITHUB_USER =~ ^[A-Za-z0-9-]+$ ]] || die "$config_file: GITHUB_USER must be a GitHub login"
+SECRETS_DIR=${SECRETS_DIR:-$HOME/.config/sandbox/secrets}
+SECRETS_DIR=${SECRETS_DIR/#\~/$HOME}
+
+if [[ $role == implementer ]]; then app_id=$IMPLEMENTER_APP_ID; else app_id=$REVIEWER_APP_ID; fi
+app_key="$SECRETS_DIR/${role}_app_key"
+claude_token="$SECRETS_DIR/claude_token"
+private_file "$app_key"
+private_file "$claude_token"
+
+# --- per-task state --------------------------------------------------------
+
+[[ -n ${XDG_RUNTIME_DIR:-} && -d $XDG_RUNTIME_DIR ]] || die "XDG_RUNTIME_DIR is not set or missing"
+task_id=$(date -u +%Y%m%d%H%M%S)-$(od -An -N3 -tx1 /dev/urandom | tr -d ' \n')
+project="sandbox-task-$task_id"
+umask 077
+mkdir -p "$XDG_RUNTIME_DIR/sandbox"
+chmod 0700 "$XDG_RUNTIME_DIR/sandbox"
+task_dir="$XDG_RUNTIME_DIR/sandbox/$task_id"
+mkdir "$task_dir"
+
+compose() {
+	docker compose -p "$project" -f "$COMPOSE_FILE" "$@"
+}
+
+started=0
+# shellcheck disable=SC2329 # invoked by the EXIT trap
+cleanup() {
+	local status=$?
+	trap - EXIT INT TERM
+	# The token files go first: they are useless after the task and must not
+	# outlive it (INV-5, INV-7).
+	rm -rf "$task_dir"
+	if ((started)); then
+		if ((keep)); then
+			compose --profile task stop >/dev/null 2>&1 || true
+			echo "task: kept $project (container stopped, volumes kept)" >&2
+		else
+			docker rm -f "$project" >/dev/null 2>&1 || true
+			docker volume rm "${project}_work" "${project}_cache" >/dev/null 2>&1 || true
+		fi
+	fi
+	if [[ -n $data_dir ]] && ! ((keep)); then
+		docker volume rm "${project}_data" >/dev/null 2>&1 || true
+	fi
+	exit "$status"
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+# --- GitHub (INV-7, INV-9) -------------------------------------------------
+
+b64url() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
+
+# Write the App JWT (RS256, iat 60 s in the past, exp 9 minutes ahead) as a
+# curl header file. Only openssl reads the private key.
+write_jwt_header() {
+	local now header payload sig
+	now=$(date +%s)
+	header=$(printf '{"alg":"RS256","typ":"JWT"}' | b64url)
+	payload=$(printf '{"iat":%d,"exp":%d,"iss":"%s"}' $((now - 60)) $((now + 540)) "$app_id" | b64url)
+	sig=$(printf '%s.%s' "$header" "$payload" | openssl dgst -sha256 -sign "$app_key" -binary | b64url) ||
+		die "could not sign the App JWT with $app_key"
+	printf 'header = "Authorization: Bearer %s.%s.%s"\n' "$header" "$payload" "$sig" >"$task_dir/jwt.curl"
+}
+
+# api AUTH METHOD PATH [BODY]: AUTH is jwt or token. Prints the response body;
+# on an HTTP error prints GitHub's message and fails.
+api() {
+	local auth=$1 method=$2 path=$3 body=${4:-} out code
+	out="$task_dir/response"
+	local args=(-sS -o "$out" -w '%{http_code}' -X "$method"
+		-K "$task_dir/$auth.curl"
+		-H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2022-11-28')
+	[[ -n $body ]] && args+=(-H 'Content-Type: application/json' --data-binary "$body")
+	code=$(curl "${args[@]}" "$API$path") || die "request failed: $method $path"
+	if [[ $code != 2?? ]]; then
+		echo "task: $method $path: HTTP $code: $(jq -r '.message // empty' "$out" 2>/dev/null)" >&2
+		return 1
+	fi
+	cat "$out"
+}
+
+write_jwt_header
+app_slug=$(api jwt GET /app | jq -r .slug) || die "App $app_id: could not authenticate; check ${role}_app_key and ${role^^}_APP_ID"
+installation_id=$(api jwt GET "/repos/$repo/installation" | jq -r .id) ||
+	die "$app_slug is not installed on $repo"
+
+# Mint the token for this one repo, with the role's permissions only.
+token_request=$(jq -nc --arg r "${repo#*/}" --argjson p "$permissions" '{repositories: [$r], permissions: $p}')
+api jwt POST "/app/installations/$installation_id/access_tokens" "$token_request" >"$task_dir/minted" ||
+	die "could not mint a token for $repo"
+rm -f "$task_dir/jwt.curl"
+jq -e --argjson p "$permissions" '.permissions == $p and (.repositories | length) == 1' "$task_dir/minted" >/dev/null ||
+	die "GitHub returned a token with other permissions or repositories than requested"
+# Not secret: the scope of the token. `verify --online` checks this line (INV-7).
+echo "task: token scope: $(jq -c '{repositories: [.repositories[].full_name], permissions}' "$task_dir/minted")" >&2
+# github_token is 0444 inside a 0700 directory: rootless Docker shows host
+# files to the container as root-owned, and the agent (uid 10001) must read it.
+jq -r .token "$task_dir/minted" >"$task_dir/github_token"
+printf 'header = "Authorization: Bearer %s"\n' "$(<"$task_dir/github_token")" >"$task_dir/token.curl"
+rm -f "$task_dir/minted" "$task_dir/response"
+chmod 0444 "$task_dir/github_token"
+
+# Preflight: the default branch carries every rule INV-9 depends on.
+default_branch=$(api token GET "/repos/$repo" | jq -r .default_branch) || die "could not read $repo"
+rules=$(api token GET "/repos/$repo/rules/branches/$default_branch") ||
+	die "could not read rules for $repo@$default_branch (rulesets need a public repo or a paid plan)"
+missing=$(jq -r -f "$SANDBOX_DIR/lib/missing-rules.jq" <<<"$rules")
+[[ -z $missing ]] || die "$repo@$default_branch is missing required rules: $missing"
+
+codeowners=$(api token GET "/repos/$repo/contents/.github/CODEOWNERS?ref=$default_branch" | jq -r .content | base64 -d) ||
+	die "$repo has no .github/CODEOWNERS"
+"$SANDBOX_DIR/lib/codeowners-ok" "$GITHUB_USER" <<<"$codeowners" || die "$repo: .github/CODEOWNERS must contain only '* @$GITHUB_USER'"
+
+bot_login="${app_slug}[bot]"
+bot_id=$(api token GET "/users/${app_slug}%5Bbot%5D" | jq -r .id) || die "could not look up $bot_login"
+rm -f "$task_dir/token.curl" "$task_dir/response"
+
+# Claude Code token: per-task copy, readable in the container like github_token.
+cp "$claude_token" "$task_dir/claude_token"
+chmod 0444 "$task_dir/claude_token"
+
+# --- containers ------------------------------------------------------------
+
+export SANDBOX_REPO=$repo
+export SANDBOX_GIT_NAME=$bot_login
+export SANDBOX_GIT_EMAIL="${bot_id}+${bot_login}@users.noreply.github.com"
+export SANDBOX_GITHUB_TOKEN_FILE="$task_dir/github_token"
+export SANDBOX_CLAUDE_TOKEN_FILE="$task_dir/claude_token"
+[[ -n $SANDBOX_CPUS ]] && export SANDBOX_CPUS
+[[ -n $SANDBOX_MEMORY ]] && export SANDBOX_MEMORY
+[[ -n $SANDBOX_PIDS ]] && export SANDBOX_PIDS
+
+docker image inspect sandbox-dev:local >/dev/null 2>&1 ||
+	die "image sandbox-dev:local not found; build it with: docker compose -f $COMPOSE_FILE --profile task build"
+docker compose -p "$EGRESS_PROJECT" -f "$COMPOSE_FILE" up -d --wait egress >/dev/null 2>&1 ||
+	die "could not start the egress proxy; try: docker compose -p $EGRESS_PROJECT -f $COMPOSE_FILE up egress"
+
+run_args=(--name "$project")
+((keep)) || run_args+=(--rm)
+[[ -t 0 ]] || run_args+=(-T) # no TTY when driven by a pipe or a script
+if [[ -n $data_dir ]]; then
+	# A short-lived helper copies the data, so the task container itself still
+	# has no host mounts (INV-1). It has no network and no capabilities.
+	docker volume create --label "com.docker.compose.project=$project" "${project}_data" >/dev/null
+	docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges:true \
+		--user 0:0 --entrypoint cp \
+		--mount "type=bind,src=$data_dir,dst=/src,readonly" \
+		--mount "type=volume,src=${project}_data,dst=/dst" \
+		sandbox-dev:local -R --no-preserve=all /src/. /dst/ ||
+		die "could not copy $data_dir into the data volume"
+	run_args+=(--volume "${project}_data:/task/data:ro")
+fi
+
+echo "task: $project: $repo as $bot_login" >&2
+started=1
+# Run in the background and wait, so a signal to `task` runs cleanup at once
+# instead of after the container exits. stdin is passed through explicitly,
+# because a background job otherwise reads from /dev/null.
+compose --profile task run "${run_args[@]}" task <&0 &
+child=$!
+set +e
+wait "$child"
+status=$?
+set -e
+exit "$status"

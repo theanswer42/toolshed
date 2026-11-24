@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Task container entry point: set up the tmpfs home, clone the repo, then run
+# the command (a login shell in stage 1).
+set -euo pipefail
+
+die() {
+	echo "entrypoint: $*" >&2
+	exit 1
+}
+
+for s in github_token claude_token; do
+	[[ -s /run/secrets/$s ]] || die "/run/secrets/$s missing or empty"
+done
+
+umask 077
+
+# User-level Claude Code config from the image (INV-18). Settings are enforced
+# separately through /etc/claude-code/managed-settings.json.
+mkdir -p "$HOME/.claude"
+cp -R /etc/sandbox/claude/. "$HOME/.claude/"
+if [[ ! -e $HOME/.claude.json ]]; then
+	jq -n '{hasCompletedOnboarding: true, projects: {"/work": {hasTrustDialogAccepted: true}}}' >"$HOME/.claude.json"
+fi
+
+# SANDBOX_REPO is set by `task`. `verify` leaves it empty to start a container
+# without GitHub access.
+if [[ -n ${SANDBOX_REPO:-} ]]; then
+	: "${SANDBOX_GIT_NAME:?}" "${SANDBOX_GIT_EMAIL:?}"
+	git config --global user.name "$SANDBOX_GIT_NAME"
+	git config --global user.email "$SANDBOX_GIT_EMAIL"
+	if [[ ! -d /work/.git ]]; then
+		git clone --quiet "https://github.com/$SANDBOX_REPO.git" /work
+	fi
+fi
+
+# Claude Code reads its token from the environment. Every process the agent
+# starts can read it; this is recorded in the README's Decisions.
+CLAUDE_CODE_OAUTH_TOKEN=$(</run/secrets/claude_token)
+export CLAUDE_CODE_OAUTH_TOKEN
+
+cd /work
+exec "$@"

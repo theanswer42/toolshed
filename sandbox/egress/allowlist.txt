@@ -1,0 +1,21 @@
+# Egress allowlist (INV-4). One domain per line; a leading dot also allows
+# subdomains. Blank lines and lines starting with # are ignored.
+# Widening this list is T1: every entry is a possible exfiltration path.
+
+# Anthropic: API, and Claude Code's token exchange and refresh
+api.anthropic.com
+platform.claude.com
+
+# GitHub
+github.com
+api.github.com
+codeload.github.com
+objects.githubusercontent.com
+
+# Python
+pypi.org
+files.pythonhosted.org
+
+# Go
+proxy.golang.org
+sum.golang.org

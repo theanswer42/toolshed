@@ -1,0 +1,181 @@
+#!/usr/bin/env bash
+# mutate: show that each `verify` check fails when the protection it tests is
+# removed (principle 10).
+#
+#   tests/mutate                   every offline mutation
+#   tests/mutate --online <repo>   also the mutations that need real tokens
+#   tests/mutate NAME...           only the named mutations
+#
+# Each mutation copies sandbox/ to a temporary directory, removes one
+# protection there, builds any image it changes under a :mutant tag, and runs
+# the copy's `verify`. The mutation is KILLED if verify reports FAIL for the
+# expected invariant, and SURVIVED otherwise. The real files are never
+# changed. The real egress proxy is restored after each mutation.
+# SC2016: mutations match literal source text, including "$".
+# shellcheck disable=SC2016
+set -euo pipefail
+
+SANDBOX_DIR=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)
+REPO_DIR=$(cd "$SANDBOX_DIR/.." && pwd)
+
+online_repo=
+only=()
+while (($#)); do
+	case $1 in
+	--online)
+		online_repo=${2:?--online needs <owner/repo>}
+		shift 2
+		;;
+	-h | --help)
+		sed -n '2,14p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+		exit 0
+		;;
+	*)
+		only+=("$1")
+		shift
+		;;
+	esac
+done
+
+scratch=$(mktemp -d "${XDG_RUNTIME_DIR:-/tmp}/sandbox-mutate.XXXXXX")
+restore_proxy() {
+	docker compose -p sandbox-egress -f "$SANDBOX_DIR/compose.yaml" up -d --wait egress >/dev/null 2>&1 ||
+		echo "mutate: could not restore the real egress proxy" >&2
+}
+cleanup() {
+	restore_proxy
+	docker volume rm sandbox-shared-work sandbox-shared-home >/dev/null 2>&1 || true
+	docker image rm sandbox-dev:mutant sandbox-egress:mutant >/dev/null 2>&1 || true
+	rm -rf "$scratch"
+}
+trap cleanup EXIT
+
+# edit FILE OLD NEW: replace exactly one occurrence, or fail. A mutation that
+# does not apply must never look like a check that passes.
+edit() {
+	python3 - "$@" <<'PY'
+import sys
+path, old, new = sys.argv[1:4]
+text = open(path).read()
+if text.count(old) != 1:
+    sys.exit(f"mutate: expected one match in {path} for: {old!r}")
+open(path, "w").write(text.replace(old, new))
+PY
+}
+
+docker_sock() {
+	local host
+	host=$(docker context inspect --format '{{.Endpoints.docker.Host}}')
+	echo "${host#unix://}"
+}
+
+# Mutations: NAME EXPECTED-ID DESCRIPTION, then a function mut_NAME that
+# edits the copy in $m.
+mutations=(
+	"host-mount INV-1 mount a host path into the task container"
+	"docker-socket INV-2 mount the Docker socket"
+	"egress-network INV-3 put the task container on the egress network"
+	"open-proxy INV-4 let the proxy CONNECT anywhere"
+	"loose-renderer INV-4 accept any allowlist entry"
+	"secret-in-image INV-5 put a token in an image layer"
+	"no-credential-helper INV-5 drop the git credential helper"
+	"run-as-root INV-6 run the task container as root"
+	"keep-capabilities INV-6 drop cap_drop"
+	"extra-secret INV-7 mount a third secret"
+	"skip-codeowner-rule INV-9 stop requiring code-owner review"
+	"loose-codeowners INV-9 accept any CODEOWNERS"
+	"shared-volume INV-13 share the work volume between tasks"
+	"no-pids-limit INV-14 drop the PID limit"
+	"skip-mode-check INV-16 accept secrets readable by others"
+	"dns-out INV-17 give the task a route and a resolver"
+	"shared-home INV-18 keep the home directory in a shared volume"
+)
+online_mutations=(
+	"reviewer-write INV-8 mint the reviewer token with contents write"
+	"no-cleanup INV-15 skip volume removal on exit"
+)
+
+mut_host-mount() { edit "$m/compose.yaml" '      - cache:/cache' $'      - cache:/cache\n      - /etc/hostname:/host-hostname:ro'; }
+mut_docker-socket() { edit "$m/compose.yaml" '      - cache:/cache' "      - cache:/cache
+      - $(docker_sock):/var/run/docker.sock"; }
+mut_egress-network() { edit "$m/compose.yaml" '    networks: [sandbox-internal]' '    networks: [sandbox-internal, sandbox-egress]'; }
+mut_open-proxy() {
+	edit "$m/egress/squid.conf" 'http_access allow CONNECT allowlist' 'http_access allow CONNECT'
+	edit "$m/egress/squid.conf" 'http_access deny !https_port' ''
+	edit "$m/compose.yaml" 'image: sandbox-egress:local' 'image: sandbox-egress:mutant'
+	docker compose -f "$m/compose.yaml" build -q egress
+}
+mut_loose-renderer() { edit "$m/egress/render-squid.sh" "domain_re='^\\.?([a-z0-9]([a-z0-9-]*[a-z0-9])?\\.)+[a-z]{2,}\$'" "domain_re='.'"; }
+mut_secret-in-image() {
+	local fake
+	fake=ghp_$(openssl rand -hex 18)
+	printf 'FROM sandbox-dev:local\nRUN echo "token=%s" >/dev/null\n' "$fake" |
+		docker build -q -t sandbox-dev:mutant - >/dev/null
+	edit "$m/compose.yaml" 'image: sandbox-dev:local' 'image: sandbox-dev:mutant'
+}
+mut_no-credential-helper() {
+	printf 'FROM sandbox-dev:local\nUSER root\nRUN git config --system --unset-all credential.https://github.com.helper\nUSER agent\n' |
+		docker build -q -t sandbox-dev:mutant - >/dev/null
+	edit "$m/compose.yaml" 'image: sandbox-dev:local' 'image: sandbox-dev:mutant'
+}
+mut_run-as-root() {
+	# Root with Docker's usual capabilities: the realistic mistake. Without
+	# them root cannot even enter the agent-owned home and /work.
+	edit "$m/compose.yaml" '    init: true' $'    init: true\n    user: "0:0"\n    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETUID, SETGID]'
+	edit "$m/compose.yaml" '/home/agent:size=1g,uid=10001,gid=10001,mode=0700,exec' '/home/agent:size=1g,mode=0700,exec'
+}
+mut_keep-capabilities() { edit "$m/compose.yaml" '  cap_drop: [ALL]' ''; }
+mut_extra-secret() {
+	edit "$m/compose.yaml" '    secrets: [github_token, claude_token]' '    secrets: [github_token, claude_token, extra]'
+	edit "$m/compose.yaml" '    file: ${SANDBOX_CLAUDE_TOKEN_FILE:-/dev/null}' $'    file: ${SANDBOX_CLAUDE_TOKEN_FILE:-/dev/null}\n  extra:\n    file: ${SANDBOX_CLAUDE_TOKEN_FILE:-/dev/null}'
+}
+mut_skip-codeowner-rule() { edit "$m/lib/missing-rules.jq" '(if any(pr[]; .require_code_owner_review == true) then empty else "pull_request: code-owner review" end),' ''; }
+mut_loose-codeowners() { edit "$m/lib/codeowners-ok" '[[ $body == "* @$user" ]]' '[[ $body == *"@$user"* ]]'; }
+mut_shared-volume() { edit "$m/compose.yaml" $'volumes:\n  work:\n' $'volumes:\n  work:\n    name: sandbox-shared-work\n'; }
+mut_no-pids-limit() { edit "$m/compose.yaml" '  pids_limit: ${SANDBOX_PIDS:-1024}' ''; }
+mut_skip-mode-check() { edit "$m/task" '((8#$mode & 8#077)) && die' '((0)) && die'; }
+mut_dns-out() {
+	edit "$m/compose.yaml" '    networks: [sandbox-internal]' '    networks: [sandbox-internal, sandbox-egress]'
+	edit "$m/compose.yaml" '    dns: [127.0.0.1]' ''
+}
+mut_shared-home() {
+	edit "$m/compose.yaml" '      - /home/agent:size=1g,uid=10001,gid=10001,mode=0700,exec' ''
+	edit "$m/compose.yaml" '      - cache:/cache' $'      - cache:/cache\n      - home:/home/agent'
+	edit "$m/compose.yaml" $'volumes:\n  work:\n' $'volumes:\n  home:\n    name: sandbox-shared-home\n  work:\n'
+}
+mut_reviewer-write() { edit "$m/task" 'reviewer) permissions='"'"'{"contents":"read"' 'reviewer) permissions='"'"'{"contents":"write"'; }
+mut_no-cleanup() { edit "$m/task" '			docker volume rm "${project}_work" "${project}_cache" >/dev/null 2>&1 || true' '			:'; }
+
+all=("${mutations[@]}")
+[[ -n $online_repo ]] && all+=("${online_mutations[@]}")
+
+survived=0
+for entry in "${all[@]}"; do
+	read -r name id desc <<<"$entry"
+	if ((${#only[@]})) && [[ " ${only[*]} " != *" $name "* ]]; then continue; fi
+	m=$scratch/$name
+	mkdir -p "$m"
+	cp -a "$SANDBOX_DIR/." "$m/"
+	cp "$REPO_DIR/.betterleaks.toml" "$scratch/.betterleaks.toml"
+	"mut_$name"
+
+	args=()
+	[[ -n $online_repo ]] && args=(--online "$online_repo")
+	out=$(SANDBOX_COMPOSE_FILE="$m/compose.yaml" SANDBOX_TASK="$m/task" "$m/verify" "${args[@]}" 2>&1) || true
+	failed=$(grep -o '^FAIL  INV-[0-9]*' <<<"$out" | awk '{print $2}' | sort -u | tr '\n' ' ' || true)
+	if [[ " $failed" == *" $id "* ]]; then
+		printf 'KILLED    %-22s %-7s %s (failed: %s)\n' "$name" "$id" "$desc" "${failed% }"
+	else
+		printf 'SURVIVED  %-22s %-7s %s (failed: %s)\n' "$name" "$id" "$desc" "${failed:-none}"
+		survived=$((survived + 1))
+		tail -8 <<<"$out" | while IFS= read -r l; do printf '          | %s\n' "$l"; done
+	fi
+	restore_proxy
+	docker volume rm sandbox-shared-work sandbox-shared-home >/dev/null 2>&1 || true
+done
+
+((survived == 0)) || {
+	echo "$survived mutation(s) survived"
+	exit 1
+}
+echo "All mutations killed"

@@ -1,0 +1,19 @@
+# Fast checks before every commit (principle 10). CI runs the same hooks and
+# is authoritative. Hook versions are pinned; changing them is T1.
+# Setup: uv tool install pre-commit==4.7.0 && pre-commit install
+repos:
+  - repo: https://github.com/betterleaks/betterleaks
+    rev: v1.10.1
+    hooks:
+      - id: betterleaks
+        args: [--config, .betterleaks.toml, --no-banner]
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.14.1-1
+    hooks:
+      - id: shfmt
+        # Check only: print a diff and fail, never rewrite in place.
+        args: [--diff]
