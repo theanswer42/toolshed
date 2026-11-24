@@ -82,7 +82,14 @@ Stage 1 is done: `task <owner/repo> --role implementer|reviewer` starts a harden
    docker compose -f sandbox/compose.yaml --profile task build
    ```
    Rebuild after changing anything under `image/`, `claude/` or `egress/`.
-7. **Hooks.** For this repo: `uv tool install pre-commit==4.7.0 && pre-commit install`.
+7. **Hooks.** For this repo, install pre-commit and the pinned betterleaks binary, then install the hooks:
+   ```sh
+   uv tool install pre-commit==4.7.0
+   curl -fsSL -o /tmp/bl.tgz https://github.com/betterleaks/betterleaks/releases/download/v1.10.1/betterleaks_1.10.1_linux_x64.tar.gz
+   echo "c174b42d7aa60caf58c0c3e555c0e4bed01fe6b0d99a412bce777b5af4ce913e  /tmp/bl.tgz" | sha256sum -c
+   tar -C ~/.local/bin -xzf /tmp/bl.tgz betterleaks
+   pre-commit install
+   ```
 
 Use a throwaway public repo for the first runs.
 
@@ -118,4 +125,6 @@ sandbox/tests/mutate --online owner/repo        # plus the token mutations
 - **2026-11-24: caches in a second per-task volume.** uv, Go and pre-commit caches go to `/cache`, a task volume removed with the task, instead of a size-limited tmpfs that counts against the memory limit. Home and `/tmp` are 1 GB tmpfs mounts, mounted `exec` because test runners execute from `/tmp`.
 - **2026-11-24: Claude Code's native binary, pinned and checksummed.** It is downloaded from `downloads.claude.ai` at build time and checked against the release manifest's SHA-256. That avoids piping the installer into a shell, and means no Node in the image.
 - **2026-11-24: the allowlist is rendered at build time.** `render-squid.sh` runs in the egress Dockerfile and rejects any entry that isn't a plain domain. A change to `allowlist.txt` takes effect after `docker compose build egress`. Changing it at runtime would need a writable config.
+- **2026-11-24: `storage.googleapis.com` stays off the allowlist** (#3). `proxy.golang.org` redirects many module downloads to signed Cloud Storage URLs. The proxy can't tell buckets apart without inspecting TLS, so allowing them would open uploads to any public-writable bucket. Go builds that need redirected modules fail loudly. betterleaks runs as pre-commit's `system` hook from the pinned binary, rather than being built from Go source.
+- **2026-11-24: uv doesn't download interpreters.** `UV_PYTHON_DOWNLOADS=never`. Python 3.13 (the default) and 3.14 are baked into the image. Other versions would need GitHub release-asset hosts and a writable install directory.
 - **2026-11-24: one stage 1 exit code.** Every failure before the shell starts exits 64. After that, `task` exits with the shell's status. Stage 2 adds the outcome codes.

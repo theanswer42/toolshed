@@ -11,6 +11,9 @@ github.com
 api.github.com
 codeload.github.com
 objects.githubusercontent.com
+# Release downloads (read only; uploads go to uploads.github.com, not allowed).
+# Needed by pre-commit hooks that fetch release binaries, such as shellcheck-py.
+release-assets.githubusercontent.com
 
 # Python
 pypi.org

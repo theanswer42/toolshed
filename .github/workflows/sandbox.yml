@@ -27,6 +27,12 @@ jobs:
         with:
           fetch-depth: 0
       - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+      - name: Install betterleaks (pinned, checksummed)
+        run: |
+          curl -fsSL -o /tmp/bl.tgz https://github.com/betterleaks/betterleaks/releases/download/v1.10.1/betterleaks_1.10.1_linux_x64.tar.gz
+          echo "c174b42d7aa60caf58c0c3e555c0e4bed01fe6b0d99a412bce777b5af4ce913e  /tmp/bl.tgz" | sha256sum -c
+          mkdir -p "$HOME/.local/bin" && tar -C "$HOME/.local/bin" -xzf /tmp/bl.tgz betterleaks
+          echo "$HOME/.local/bin" >>"$GITHUB_PATH"
       - name: pre-commit (shellcheck, shfmt, betterleaks on the tree)
         run: uvx pre-commit@4.7.0 run --all-files --show-diff-on-failure
       - name: betterleaks on every commit in the PR

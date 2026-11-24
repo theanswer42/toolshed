@@ -5,7 +5,11 @@ repos:
   - repo: https://github.com/betterleaks/betterleaks
     rev: v1.10.1
     hooks:
-      - id: betterleaks
+      # The system variant runs a pinned betterleaks binary from PATH (the dev
+      # image, CI, and the host per the README). The default variant builds
+      # from Go source, which needs storage.googleapis.com, kept off the
+      # allowlist.
+      - id: betterleaks-system
         args: [--config, .betterleaks.toml, --no-banner]
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.11.0.1
