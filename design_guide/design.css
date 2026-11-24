@@ -1,6 +1,6 @@
 /*
  * design.css — shared stylesheet for personal web apps
- * version: 0.2.0
+ * version: 0.3.0
  *
  * No build step. Copy this file, design.js (optional) and fonts/ into an
  * app's static folder, keeping fonts/ next to this file.
@@ -156,6 +156,7 @@
     --form-max: 32rem;      /* form pages */
     --control-height: 2rem; /* buttons, inputs */
     --control-height-sm: 1.625rem;
+    --tabbar-height: 3.5rem;  /* bottom nav on phones */
 
     /* Motion */
     --duration: 150ms;
@@ -211,6 +212,14 @@
     --color-danger-bg: color-mix(in oklab, var(--color-danger) 12%, var(--color-surface));
     --color-danger-text: color-mix(in oklab, var(--color-danger) 58%, var(--color-text));
     --color-danger-border: color-mix(in oklab, var(--color-danger) 35%, var(--color-surface));
+  }
+
+  /* Touch screens: bigger targets (about 44px) */
+  @media (pointer: coarse) {
+    :root {
+      --control-height: 2.75rem;
+      --control-height-sm: 2.25rem;
+    }
   }
 
   /* Light / dark: follows the system unless forced with data-mode */
@@ -351,6 +360,13 @@
   }
   input[type="range"] { accent-color: var(--color-accent); width: 100%; }
 
+  @media (pointer: coarse) {
+    input:where(:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"], [type="submit"], [type="button"], [type="reset"])),
+    select,
+    textarea { font-size: max(16px, var(--text-base)); }
+    input[type="checkbox"], input[type="radio"] { width: 1.25rem; height: 1.25rem; }
+  }
+
   input[type="file"] { font-size: var(--text-sm); color: var(--color-text-muted); }
   input[type="file"]::file-selector-button {
     margin-right: var(--space-3);
@@ -446,13 +462,31 @@
   .page.wide { max-width: none; }
   .page.narrow { max-width: calc(var(--form-max) + 2 * var(--space-6)); }
 
+  /*
+   * Phones: the document scrolls instead of <main>, so the browser's
+   * toolbar can collapse and pull-to-refresh works. The header sticks to
+   * the top and the sidenav becomes a tab bar fixed to the bottom.
+   */
   @media (max-width: 48rem) {
     .app {
-      grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: auto auto minmax(0, 1fr);
-      grid-template-areas: "header" "nav" "main";
+      display: block;
+      height: auto;
+      min-height: 100dvh;
+      padding-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
     }
-    .page { padding: var(--space-4) var(--space-4) var(--space-6); }
+    .app > .app-header { position: sticky; top: 0; z-index: 20; }
+    .app > main { overflow: visible; scrollbar-gutter: auto; }
+    .app > .sidenav {
+      position: fixed;
+      inset: auto 0 0 0;
+      z-index: 20;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+    .page {
+      padding: var(--space-4) max(var(--space-4), env(safe-area-inset-right)) var(--space-6) max(var(--space-4), env(safe-area-inset-left));
+      gap: var(--space-4);
+    }
   }
 
   /* Vertical rhythm: children separated by --gap */
@@ -492,6 +526,16 @@
     padding: var(--space-2) var(--space-5);
     background: var(--color-surface);
     border-bottom: var(--border);
+  }
+  @media (max-width: 48rem) {
+    .app-header {
+      flex-wrap: wrap;
+      gap: var(--space-2) var(--space-3);
+      padding: max(var(--space-2), env(safe-area-inset-top)) max(var(--space-4), env(safe-area-inset-right)) var(--space-2) max(var(--space-4), env(safe-area-inset-left));
+    }
+    .flash-region { order: 10; flex-basis: 100%; justify-content: stretch; }
+    .flash-region:empty { display: none; }
+    .flash { max-width: none; flex: 1; }
   }
   .brand {
     display: flex;
@@ -547,11 +591,35 @@
   .sidenav a[aria-current="page"] { background: var(--color-accent-soft); color: var(--color-accent-soft-text); }
   .sidenav a .count { margin-left: auto; font-size: var(--text-xs); color: var(--color-text-subtle); font-variant-numeric: tabular-nums; }
 
+  /* Phones: bottom tab bar — icon above a short label. Keep to ~5 items. */
   @media (max-width: 48rem) {
-    .sidenav { border-right: 0; border-bottom: var(--border); padding: var(--space-2) var(--space-3); overflow-x: auto; }
+    .sidenav {
+      display: flex;
+      border-right: 0;
+      border-top: var(--border);
+      padding: 0 var(--space-1) env(safe-area-inset-bottom);
+      box-shadow: 0 -1px 3px rgb(0 0 0 / 0.06);
+    }
     .sidenav h2 { display: none; }
-    .sidenav ul { flex-direction: row; }
-    .sidenav a { white-space: nowrap; }
+    .sidenav ul { flex: 1 0 auto; flex-direction: row; gap: 0; }
+    .sidenav li { flex: 1 0 4.25rem; min-width: 0; }
+    .sidenav a {
+      flex-direction: column;
+      justify-content: center;
+      gap: 2px;
+      height: var(--tabbar-height);
+      padding: var(--space-1);
+      border-radius: 0;
+      font-size: var(--text-xs);
+      line-height: 1.2;
+      text-align: center;
+    }
+    .sidenav a > :not(svg, .count) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sidenav a svg { width: 1.375rem; height: 1.375rem; }
+    .sidenav a:hover { background: transparent; }
+    .sidenav a[aria-current="page"] { background: transparent; color: var(--color-accent-soft-text); }
+    .sidenav a[aria-current="page"] svg { opacity: 1; }
+    .sidenav a .count { display: none; }
   }
 
   /* ---------- Page header: breadcrumbs, title row, toolbar ---------- */
@@ -577,6 +645,10 @@
   .toolbar .spacer { flex: 1; }
   .toolbar :is(input, select) { width: auto; }
   .toolbar input[type="search"] { min-width: 14rem; }
+  @media (max-width: 48rem) {
+    .toolbar .spacer { display: none; }
+    .toolbar input[type="search"] { min-width: 0; flex: 1 1 100%; order: 10; }
+  }
 
   /* ---------- Pager: prev / current / next (time periods, pages, items) ---------- */
   .pager { display: inline-flex; align-items: center; gap: var(--space-1); }
@@ -656,6 +728,9 @@
     background: color-mix(in oklch, var(--color-surface) 92%, transparent);
     backdrop-filter: blur(6px);
     box-shadow: var(--shadow-lg);
+  }
+  @media (max-width: 48rem) {
+    .app .footer-bar.sticky { bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--space-2)); }
   }
   .footer-bar .info { color: var(--color-text-muted); font-size: var(--text-sm); }
 
@@ -799,8 +874,58 @@
     padding-block: 0;
     font-size: var(--text-sm);
   }
+  @media (pointer: coarse) {
+    td :is(input:not([type="checkbox"], [type="radio"]), select) { font-size: max(16px, var(--text-base)); }
+  }
   td :is(button, .button) { min-height: var(--control-height-sm); padding-inline: var(--space-2); font-size: var(--text-sm); }
   td :is(button, .button).icon { width: var(--control-height-sm); padding: 0; }
+
+  /*
+   * Responsive table: below 40rem each row becomes a list item.
+   *   line 1: .primary-cell (left) and the first .num cell (right)
+   *   line 2: the other cells, small and muted, wrapping inline
+   * Cells with inputs take the full width. data-label="…" on a cell
+   * prefixes it with a label. .hide-narrow drops a column on phones.
+   */
+  @media (max-width: 40rem) {
+    table.responsive thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    table.responsive, table.responsive tbody, table.responsive tfoot { display: block; }
+    table.responsive tr {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: var(--space-1) var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      border-bottom: var(--border);
+    }
+    table.responsive tbody tr:last-child { border-bottom: 0; }
+    table.responsive :is(td, th) {
+      display: block;
+      padding: 0;
+      border: 0;
+      background: none !important;
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      text-align: left;
+    }
+    table.responsive td.primary-cell {
+      order: -2;
+      flex: 1 1 calc(100% - 8rem);
+      min-width: 0;
+      font-size: var(--text-base);
+      color: var(--color-text);
+    }
+    table.responsive td.num { order: -1; margin-left: auto; font-size: var(--text-base); color: var(--color-text); font-weight: var(--weight-medium); }
+    table.responsive td.num ~ td.num { order: 0; margin-left: 0; font-size: var(--text-sm); color: var(--color-text-muted); font-weight: var(--weight-normal); }
+    table.responsive td.actions-cell { order: 1; width: auto; margin-left: auto; }
+    table.responsive td[data-label]::before { content: attr(data-label) " "; color: var(--color-text-subtle); }
+    table.responsive td:not(:has(.edit-in-place)):has(input:not([type="checkbox"], [type="radio"]), select, textarea) { flex: 1 1 100%; }
+    table.responsive td:not(:has(.edit-in-place)):has(input, select, textarea)[data-label]::before { display: block; margin-bottom: 2px; font-size: var(--text-xs); }
+    table.responsive td:has(> .edit-in-place:not([hidden])) { flex: 1 1 100%; margin-left: 0; }
+    table.responsive tfoot tr { justify-content: space-between; }
+    table.responsive tfoot :is(td, th) { color: var(--color-text); font-weight: var(--weight-semibold); }
+    table.responsive tfoot td[colspan] { order: -2; }
+  }
 
   /* ---------- List view: stacked rows, no columns ---------- */
   .item-list {
@@ -878,7 +1003,9 @@
     transition: border-color var(--duration), box-shadow var(--duration);
   }
   .tile .thumb { --size: 3.5rem; }
-  a.tile:hover { border-color: var(--color-border-strong); box-shadow: var(--shadow); }
+  @media (hover: hover) {
+    a.tile:hover { border-color: var(--color-border-strong); box-shadow: var(--shadow); }
+  }
   .tile[aria-selected="true"] { border-color: var(--color-accent); box-shadow: 0 0 0 1px var(--color-accent); }
 
   /* ---------- Gallery view: grid of thumbnails with a caption ---------- */
@@ -890,6 +1017,7 @@
     grid-template-columns: repeat(auto-fill, minmax(min(var(--min, 10rem), 100%), 1fr));
   }
   .gallery.large { --min: 15rem; }
+  @media (max-width: 40rem) { .gallery { --min: 8.5rem; gap: var(--space-4) var(--space-3); } }
   .gallery-item {
     display: flex;
     flex-direction: column;
@@ -907,8 +1035,10 @@
     transition: transform var(--duration), box-shadow var(--duration);
   }
   .gallery-item .thumb.wide { aspect-ratio: 4 / 3; }
-  a.gallery-item:hover .thumb { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
-  a.gallery-item:hover .item-title { color: var(--color-link); }
+  @media (hover: hover) {
+    a.gallery-item:hover .thumb { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+    a.gallery-item:hover .item-title { color: var(--color-link); }
+  }
   .gallery-item[aria-selected="true"] .thumb { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 
   /* ---------- Empty state ---------- */
@@ -956,6 +1086,11 @@
   .inline-form .field { flex: 0 1 14rem; }
   .inline-form .field.narrow { flex: 0 1 8rem; }
   .inline-form .field > label { font-size: var(--text-xs); color: var(--color-text-muted); }
+  @media (max-width: 40rem) {
+    .inline-form .field { flex: 1 1 100%; }
+    .inline-form .field.narrow { flex: 1 1 40%; }
+    .inline-form > button.primary { flex: 1; }
+  }
   .inline-form > .form-error { flex-basis: 100%; }
 
   /* In-place edit of a single value (table cell or dl value) */
@@ -1082,6 +1217,7 @@
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
   }
+  @media (max-width: 40rem) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .stat .value { font-size: var(--text-xl); } }
   .stat .label { font-size: var(--text-sm); color: var(--color-text-muted); }
   .stat .value { font-size: var(--text-2xl); font-weight: var(--weight-semibold); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1.2; }
   .stat .delta { font-size: var(--text-sm); color: var(--color-text-muted); }
@@ -1161,6 +1297,9 @@
   .gap-4 { --gap: var(--space-4); }
   .gap-5 { --gap: var(--space-5); }
   .gap-6 { --gap: var(--space-6); }
+
+  @media (max-width: 48rem) { .hide-narrow { display: none !important; } }
+  @media (min-width: 48.0625rem) { .show-narrow { display: none !important; } }
 
   .visually-hidden {
     position: absolute !important;

@@ -60,8 +60,8 @@ Every app uses the same shell:
 - **`.page`** wraps the content and sets the width (`--content-max`) and
   vertical spacing. Use `.page.wide` for wide tables or galleries and
   `.page.narrow` for a page that is just one form.
-- Below 48rem the sidenav becomes a horizontal, scrollable strip under
-  the header. Nothing else is needed for narrow screens.
+- Below 48rem (phones) the shell changes shape; see §10. The sidenav
+  becomes a bottom tab bar, so nav labels should be one short word.
 
 ## 2. Page header and in-page navigation
 
@@ -178,7 +178,8 @@ Rules for all views:
   identifying cell gets `.primary-cell`. Put row actions last in
   `.actions-cell`, as ghost icon buttons. Optional modifiers are `.hover`,
   `.striped` and `.compact`. Totals go in `<tfoot>`. Wrap wide tables in
-  `.card.scroll-x`.
+  `.card.scroll-x`. Add `.responsive` so that on phones each row turns
+  into a list item (§10).
 - **Unconfirmed or suggested values** (an auto-category, say) are shown
   in `<em class="muted">` until a person confirms them.
 - **Selection**: `aria-selected="true"` on a `tr`, `.tile` or
@@ -447,3 +448,83 @@ Utilities like `.muted`, `.small`, `.num`, `.mono`, `.truncate`,
 `.nowrap` and `.visually-hidden` are for one-off text tweaks. If you're
 stacking several utilities on one element, it probably wants to be a
 component.
+
+## 10. Phones and touch
+
+Same pages, same URLs, one stylesheet. The layout adapts below 48rem
+(phones), and controls grow on touch screens. Firefox for Android is the
+main mobile browser to test.
+
+### What changes on a phone
+
+- **The page scrolls, not `<main>`.** This lets the browser's toolbar
+  collapse while scrolling and keeps pull-to-refresh working.
+- **The app header sticks to the top.** Flash messages drop to a
+  full-width row under the brand.
+- **The sidenav becomes a bottom tab bar**: icon above a one-word label,
+  fixed to the bottom, clear of the phone's home indicator. It fits about
+  five items. Hide secondary groups with `.hide-narrow`, or move them to
+  a "More" page. Item counts are hidden.
+- **Sticky footer bars** sit just above the tab bar.
+- **The toolbar wraps**, and search takes a full row.
+- **Inline forms stack**: one field per row, with narrow fields in
+  pairs.
+- **Grids reflow.** Tiles go to one column, galleries to two, and stats
+  to two.
+
+### Touch screens (`pointer: coarse`)
+
+- Buttons and inputs grow to 44px (`--control-height`); small ones to
+  36px.
+- Inputs, selects and textareas use at least 16px text. Below that, iOS
+  Safari zooms the page when a field gets focus.
+- Checkboxes and radios grow to 20px.
+- Hover-only effects, such as the gallery lift, are limited to
+  `@media (hover: hover)`, so they don't stick after a tap.
+
+### Tables on phones
+
+Wide tables don't work on a phone. Pick one of these per table:
+
+1. **`table.responsive`** (the usual choice). Below 40rem each row becomes
+   a list item. Line one has the `.primary-cell` on the left and the first
+   `.num` cell on the right. The other cells follow on the next line,
+   small and muted, wrapping inline. Cells containing inputs take the
+   full width, so bulk-edit tables work too. Add `data-label="Category"`
+   to a cell to prefix it with a label (useful for inputs and ambiguous
+   values). Put `.hide-narrow` on the `th` and `td` of columns that
+   don't matter on a phone.
+2. **Horizontal scroll** (`.card.scroll-x`) for tables whose columns
+   only make sense side by side.
+3. **A different view.** Render the collection as a list or tile view
+   when it reads better that way.
+
+```html
+<table class="responsive">
+  <thead><tr><th>Date</th><th class="hide-narrow">Description</th><th>Merchant</th><th class="num">Amount</th></tr></thead>
+  <tbody>
+    <tr><td>2026-11-21</td><td class="hide-narrow">TRADER JOES #552</td>
+        <td class="primary-cell">Trader Joe's</td><td class="num">$84.12</td></tr>
+  </tbody>
+</table>
+```
+
+### Viewport and keyboard
+
+Use this viewport tag in every page:
+
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+```
+
+`viewport-fit=cover` lets the header and tab bar extend under the
+notch and home indicator; the CSS pads them with `env(safe-area-inset-*)`.
+Don't set `interactive-widget`. With the default (`resizes-visual`, in
+both Firefox and Chrome on Android), the on-screen keyboard covers the
+tab bar instead of pushing it up into the page.
+
+### Helpers
+
+- `.hide-narrow` hides an element on phones.
+- `.show-narrow` shows an element only on phones.
+

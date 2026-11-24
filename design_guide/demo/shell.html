@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Shell & navigation · Design guide</title>
   <link rel="stylesheet" href="../design.css">
   <link rel="stylesheet" href="../themes.css">
@@ -32,20 +32,20 @@
       <option value="kanagawa">Kanagawa</option>
       <option value="sepia">Sepia</option>
     </select>
-    <button type="button" class="ghost small" data-demo-mode title="Cycle mode: auto / light / dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg><span class="label">auto</span></button>
+    <button type="button" class="ghost small" data-demo-mode title="Cycle mode: auto / light / dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg><span class="label hide-narrow">auto</span></button>
   </header>
 
   <nav class="sidenav" aria-label="Main">
     <h2>Demo</h2>
     <ul>
-        <li><a href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7V5h16v2M9 19h6M12 5v14"/></svg>Foundations</a></li>
-        <li><a href="shell.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/></svg>Shell & navigation</a></li>
-        <li><a href="lists.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 10v10"/></svg>Lists & data</a></li>
-        <li><a href="forms.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>Forms & editing</a></li>
-        <li><a href="feedback.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 003.4 0"/></svg>Feedback</a></li>
+        <li><a href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7V5h16v2M9 19h6M12 5v14"/></svg><span>Foundations</span></a></li>
+        <li><a href="shell.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/></svg><span>Shell</span></a></li>
+        <li><a href="lists.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 10v10"/></svg><span>Lists</span></a></li>
+        <li><a href="forms.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg><span>Forms</span></a></li>
+        <li><a href="feedback.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 003.4 0"/></svg><span>Feedback</span></a></li>
     </ul>
-    <h2>Example app</h2>
-    <ul>
+    <h2 class="hide-narrow">Example app</h2>
+    <ul class="hide-narrow">
       <li><a href="lists.html#table-view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 10v10"/></svg>Transactions <span class="count">214</span></a></li>
       <li><a href="lists.html#tile-view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>Albums <span class="count">38</span></a></li>
       <li><a href="forms.html#inline-form"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Budgets</a></li>
@@ -162,68 +162,68 @@
       <section class="section">
         <header><h2>Sticky footer bar</h2><span class="small muted">For long pages: the bar stays at the bottom of the scroll area. Scroll down.</span></header>
         <div class="card scroll-x">
-          <table class="hover">
-            <thead><tr><th>Date</th><th>Description</th><th>Merchant</th><th>Category</th><th class="num">Amount</th></tr></thead>
+          <table class="hover responsive">
+            <thead><tr><th>Date</th><th class="hide-narrow">Description</th><th>Merchant</th><th>Category</th><th class="num">Amount</th></tr></thead>
             <tbody>
-            <tr><td class="nowrap muted">2026-11-30</td><td>AMAZON #7945</td>
+            <tr><td class="nowrap muted">2026-11-30</td><td class="hide-narrow">AMAZON #7945</td>
               <td class="primary-cell">Amazon</td><td>Shopping</td><td class="num">$75.58</td></tr>
-            <tr><td class="nowrap muted">2026-11-29</td><td>SHELL #9101</td>
+            <tr><td class="nowrap muted">2026-11-29</td><td class="hide-narrow">SHELL #9101</td>
               <td class="primary-cell">Shell</td><td><em class="muted">Fuel</em></td><td class="num">$25.26</td></tr>
-            <tr><td class="nowrap muted">2026-11-28</td><td>WALGREENS #1064</td>
+            <tr><td class="nowrap muted">2026-11-28</td><td class="hide-narrow">WALGREENS #1064</td>
               <td class="primary-cell">Walgreens</td><td>Health</td><td class="num">$72.29</td></tr>
-            <tr><td class="nowrap muted">2026-11-27</td><td>AMAZON #2928</td>
+            <tr><td class="nowrap muted">2026-11-27</td><td class="hide-narrow">AMAZON #2928</td>
               <td class="primary-cell">Amazon</td><td>Shopping</td><td class="num">$126.80</td></tr>
-            <tr><td class="nowrap muted">2026-11-26</td><td>TARGET #520</td>
+            <tr><td class="nowrap muted">2026-11-26</td><td class="hide-narrow">TARGET #520</td>
               <td class="primary-cell">Target</td><td><em class="muted">Shopping</em></td><td class="num">$29.06</td></tr>
-            <tr><td class="nowrap muted">2026-11-25</td><td>TARGET #4552</td>
+            <tr><td class="nowrap muted">2026-11-25</td><td class="hide-narrow">TARGET #4552</td>
               <td class="primary-cell">Target</td><td>Shopping</td><td class="num">$155.20</td></tr>
-            <tr><td class="nowrap muted">2026-11-24</td><td>AMAZON #6201</td>
+            <tr><td class="nowrap muted">2026-11-24</td><td class="hide-narrow">AMAZON #6201</td>
               <td class="primary-cell">Amazon</td><td>Shopping</td><td class="num">$42.90</td></tr>
-            <tr><td class="nowrap muted">2026-11-23</td><td>PG&E #6455</td>
+            <tr><td class="nowrap muted">2026-11-23</td><td class="hide-narrow">PG&E #6455</td>
               <td class="primary-cell">PG&E</td><td>Utilities</td><td class="num">$203.37</td></tr>
-            <tr><td class="nowrap muted">2026-11-22</td><td>COSTCO #4687</td>
+            <tr><td class="nowrap muted">2026-11-22</td><td class="hide-narrow">COSTCO #4687</td>
               <td class="primary-cell">Costco</td><td><em class="muted">Groceries</em></td><td class="num">$62.73</td></tr>
-            <tr><td class="nowrap muted">2026-11-21</td><td>PG&E #9072</td>
+            <tr><td class="nowrap muted">2026-11-21</td><td class="hide-narrow">PG&E #9072</td>
               <td class="primary-cell">PG&E</td><td>Utilities</td><td class="num">$226.92</td></tr>
-            <tr><td class="nowrap muted">2026-11-20</td><td>TARGET #9477</td>
+            <tr><td class="nowrap muted">2026-11-20</td><td class="hide-narrow">TARGET #9477</td>
               <td class="primary-cell">Target</td><td>Shopping</td><td class="num">$74.86</td></tr>
-            <tr><td class="nowrap muted">2026-11-19</td><td>REI #8429</td>
+            <tr><td class="nowrap muted">2026-11-19</td><td class="hide-narrow">REI #8429</td>
               <td class="primary-cell">REI</td><td>Outdoors</td><td class="num">$212.23</td></tr>
-            <tr><td class="nowrap muted">2026-11-18</td><td>AMAZON #7162</td>
+            <tr><td class="nowrap muted">2026-11-18</td><td class="hide-narrow">AMAZON #7162</td>
               <td class="primary-cell">Amazon</td><td>Shopping</td><td class="num">$101.69</td></tr>
-            <tr><td class="nowrap muted">2026-11-17</td><td>COMCAST #808</td>
+            <tr><td class="nowrap muted">2026-11-17</td><td class="hide-narrow">COMCAST #808</td>
               <td class="primary-cell">Comcast</td><td>Internet</td><td class="num">$42.07</td></tr>
-            <tr><td class="nowrap muted">2026-11-16</td><td>PG&E #4694</td>
+            <tr><td class="nowrap muted">2026-11-16</td><td class="hide-narrow">PG&E #4694</td>
               <td class="primary-cell">PG&E</td><td>Utilities</td><td class="num">$14.93</td></tr>
-            <tr><td class="nowrap muted">2026-11-15</td><td>COSTCO #5717</td>
+            <tr><td class="nowrap muted">2026-11-15</td><td class="hide-narrow">COSTCO #5717</td>
               <td class="primary-cell">Costco</td><td>Groceries</td><td class="num">$130.17</td></tr>
-            <tr><td class="nowrap muted">2026-11-14</td><td>SHELL #6863</td>
+            <tr><td class="nowrap muted">2026-11-14</td><td class="hide-narrow">SHELL #6863</td>
               <td class="primary-cell">Shell</td><td><em class="muted">Fuel</em></td><td class="num">$239.36</td></tr>
-            <tr><td class="nowrap muted">2026-11-13</td><td>WALGREENS #4626</td>
+            <tr><td class="nowrap muted">2026-11-13</td><td class="hide-narrow">WALGREENS #4626</td>
               <td class="primary-cell">Walgreens</td><td>Health</td><td class="num">$51.83</td></tr>
-            <tr><td class="nowrap muted">2026-11-12</td><td>SHELL #5353</td>
+            <tr><td class="nowrap muted">2026-11-12</td><td class="hide-narrow">SHELL #5353</td>
               <td class="primary-cell">Shell</td><td>Fuel</td><td class="num">$87.98</td></tr>
-            <tr><td class="nowrap muted">2026-11-11</td><td>WHOLE FOODS #1754</td>
+            <tr><td class="nowrap muted">2026-11-11</td><td class="hide-narrow">WHOLE FOODS #1754</td>
               <td class="primary-cell">Whole Foods</td><td>Groceries</td><td class="num">$135.81</td></tr>
-            <tr><td class="nowrap muted">2026-11-10</td><td>TARGET #9638</td>
+            <tr><td class="nowrap muted">2026-11-10</td><td class="hide-narrow">TARGET #9638</td>
               <td class="primary-cell">Target</td><td><em class="muted">Shopping</em></td><td class="num">$18.54</td></tr>
-            <tr><td class="nowrap muted">2026-11-09</td><td>UBER #3008</td>
+            <tr><td class="nowrap muted">2026-11-09</td><td class="hide-narrow">UBER #3008</td>
               <td class="primary-cell">Uber</td><td><em class="muted">Transport</em></td><td class="num">$207.46</td></tr>
-            <tr><td class="nowrap muted">2026-11-08</td><td>BLUE BOTTLE #1453</td>
+            <tr><td class="nowrap muted">2026-11-08</td><td class="hide-narrow">BLUE BOTTLE #1453</td>
               <td class="primary-cell">Blue Bottle</td><td><em class="muted">Coffee</em></td><td class="num">$112.33</td></tr>
-            <tr><td class="nowrap muted">2026-11-07</td><td>WALGREENS #5459</td>
+            <tr><td class="nowrap muted">2026-11-07</td><td class="hide-narrow">WALGREENS #5459</td>
               <td class="primary-cell">Walgreens</td><td>Health</td><td class="num">$231.62</td></tr>
-            <tr><td class="nowrap muted">2026-11-06</td><td>TRADER JOES #2605</td>
+            <tr><td class="nowrap muted">2026-11-06</td><td class="hide-narrow">TRADER JOES #2605</td>
               <td class="primary-cell">Trader Joe's</td><td>Groceries</td><td class="num">$80.18</td></tr>
-            <tr><td class="nowrap muted">2026-11-05</td><td>CHEVRON #1373</td>
+            <tr><td class="nowrap muted">2026-11-05</td><td class="hide-narrow">CHEVRON #1373</td>
               <td class="primary-cell">Chevron</td><td>Fuel</td><td class="num">$157.85</td></tr>
-            <tr><td class="nowrap muted">2026-11-04</td><td>BLUE BOTTLE #4884</td>
+            <tr><td class="nowrap muted">2026-11-04</td><td class="hide-narrow">BLUE BOTTLE #4884</td>
               <td class="primary-cell">Blue Bottle</td><td>Coffee</td><td class="num">$149.78</td></tr>
-            <tr><td class="nowrap muted">2026-11-03</td><td>SHELL #2703</td>
+            <tr><td class="nowrap muted">2026-11-03</td><td class="hide-narrow">SHELL #2703</td>
               <td class="primary-cell">Shell</td><td>Fuel</td><td class="num">$63.01</td></tr>
-            <tr><td class="nowrap muted">2026-11-02</td><td>SAFEWAY #7551</td>
+            <tr><td class="nowrap muted">2026-11-02</td><td class="hide-narrow">SAFEWAY #7551</td>
               <td class="primary-cell">Safeway</td><td>Groceries</td><td class="num">$139.25</td></tr>
-            <tr><td class="nowrap muted">2026-11-01</td><td>SHELL #4856</td>
+            <tr><td class="nowrap muted">2026-11-01</td><td class="hide-narrow">SHELL #4856</td>
               <td class="primary-cell">Shell</td><td>Fuel</td><td class="num">$90.19</td></tr>
             </tbody>
           </table>

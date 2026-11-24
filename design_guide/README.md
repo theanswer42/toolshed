@@ -27,6 +27,8 @@ script, two fonts. No build step.
    with an inline error next to the thing that failed.
 8. **Light and dark.** Everything follows the system colour scheme. Apps
    choose a theme; they don't hand-pick colours.
+9. **Works on a phone.** One responsive layout, touch-sized controls,
+   and Firefox for Android as the main mobile test browser.
 
 ## Files
 
@@ -75,7 +77,8 @@ which copy.
 
 Edit `design.css` and check every demo page in light and dark mode
 (the moon button in the demo header cycles auto / light / dark), and
-at a narrow width. The theme menu in the demo header switches themes;
+at phone width (about 390px; Firefox's Responsive Design Mode with touch
+simulation is the easiest way). The theme menu in the demo header switches themes;
 the Foundations page shows every theme side by side and has an
 accent-hue slider for the default theme.
 
