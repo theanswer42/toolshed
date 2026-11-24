@@ -10,7 +10,7 @@ The user starts tasks by hand and can watch their output. A future orchestrator 
 
 | Entity | Description | Key fields | Relations |
 | --- | --- | --- | --- |
-| Task | One run of the agent on one target in one role | repo (`owner/name`), target, role, keep | Has one task container and one task volume |
+| Task | One run of the agent on one target in one role | repo (`owner/name`), target, role, data directory (optional), keep | Has one task container, one clone volume, and an optional data volume |
 | Target | What the task works on | kind (`issue` or `pr`), number | Belongs to one repo |
 | Role | What the agent does to the target | `implementer` or `reviewer` | Decides the GitHub identity and the token's permissions |
 | Outcome | The single result a task ends with | kind, link | Recorded on the target and as the exit code |
@@ -18,6 +18,7 @@ The user starts tasks by hand and can watch their output. A future orchestrator 
 | Egress proxy | Long-lived container that forwards allowlisted traffic | allowlist | Shared by all task containers |
 | Task container | Ephemeral container where the task runner and agent run | name, limits | Joins the internal network only |
 | Task volume | Ephemeral volume holding the task's clone | name | Mounted only into its task container |
+| Data volume | Ephemeral, read-only volume holding sample data for one task | name | Filled from the host directory given with `--data`; mounted at `/task/data` |
 | GitHub App | One per role, installed on the user's account for selected repos | app ID, private key on the host | Mints the task's installation token |
 | Trusted authors | GitHub logins whose words the agent may act on | the user, both Apps | Filters what enters the prompt |
 
@@ -89,10 +90,11 @@ Outcomes and exit codes:
 | INV-12 | Only the task runner changes `agent:` labels | T2 | Task runner; agent instructions | Runner tests |
 | INV-13 | Every task gets its own container and volume; tasks share only the image and the proxy | T2 | `task` naming | `verify`: two tasks see separate volumes |
 | INV-14 | A task container always runs with CPU, memory, and PID limits. The agent is stopped after 50 minutes, so the runner can still record the outcome before the task's token expires at 60 | T2 | `compose.yaml`, task runner | `verify`: limits present; runner test for the time limit |
-| INV-15 | When a task ends without `keep`, its container and volume are removed | T2 | `task` cleanup trap | `verify`: nothing left after exit |
+| INV-15 | When a task ends without `keep`, its container and volumes are removed | T2 | `task` cleanup trap | `verify`: nothing left after exit |
 | INV-16 | `task` refuses to start if a secret file is missing, empty, or readable by other host users | T2 | `task` | `verify`: start fails for each bad secret |
-| INV-18 | The agent's user-level Claude Code config comes only from the image, read only. Nothing persists from one task to the next | T1 | `Dockerfile`; no shared writable volumes | `verify`: `~/.claude` config files are read only and match the image; no volume is reused across tasks |
 | INV-17 | A task container cannot resolve external domain names. Only the proxy resolves names, so DNS queries cannot carry data out | T1 | Network and DNS settings in `compose.yaml` | `verify`: resolving an external name from a task container fails |
+| INV-18 | The agent's user-level Claude Code config comes only from the image, read only. Nothing persists from one task to the next | T1 | `Dockerfile`; no shared writable volumes | `verify`: `~/.claude` config files are read only and match the image; no volume is reused across tasks |
+| INV-19 | The sandbox holds nothing private except the task's tokens. Everything else a task can see, including sample data, is treated as public | T1 | User sanitizes sample data before passing it; `task` copies only the directory named by `--data` | Process rule, owned by the user; not mechanically checked |
 
 Notes:
 
@@ -112,6 +114,16 @@ Notes:
 | Prompt building, branch selection | T2 | Mistakes are visible and recoverable |
 | Dev image tool installs | T3 | Failures are loud: a missing tool breaks the task at once |
 | Messages and help output | T3 | Cosmetic |
+
+## Sample data
+
+Some tasks need example inputs, such as CSV exports for an ingest tool.
+
+- `task --data <dir>` copies a host directory into a new data volume for that task alone, mounted read only at `/task/data`. A short-lived helper container does the copy, so the task container still has no host mounts.
+- **Everything passed with `--data` is assumed to be published**, because the agent may commit it, quote it, or send it to the model. The user sanitizes it first. This is the user's responsibility, recorded as INV-19, and no mechanical check backs it up.
+- Because the data is public by definition, the agent may use it directly, including as committed test fixtures.
+- The task's prompt says the data exists and where it is.
+- A conventional place to keep a repo's sample data on the host is a gitignored directory in the local checkout, but `task` always takes the path explicitly.
 
 ## Agent configuration
 
