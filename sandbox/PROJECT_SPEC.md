@@ -88,9 +88,10 @@ Outcomes and exit codes:
 | INV-11 | Every task ends with exactly one outcome, and that outcome is visible on the target | T2 | Task runner wraps the agent and checks GitHub | Runner tests for each outcome and for an agent that exits without one |
 | INV-12 | Only the task runner changes `agent:` labels | T2 | Task runner; agent instructions | Runner tests |
 | INV-13 | Every task gets its own container and volume; tasks share only the image and the proxy | T2 | `task` naming | `verify`: two tasks see separate volumes |
-| INV-14 | A task container always runs with CPU, memory, and PID limits, and a task has a time limit | T2 | `compose.yaml`, task runner | `verify`: limits present |
+| INV-14 | A task container always runs with CPU, memory, and PID limits. The agent is stopped after 50 minutes, so the runner can still record the outcome before the task's token expires at 60 | T2 | `compose.yaml`, task runner | `verify`: limits present; runner test for the time limit |
 | INV-15 | When a task ends without `keep`, its container and volume are removed | T2 | `task` cleanup trap | `verify`: nothing left after exit |
 | INV-16 | `task` refuses to start if a secret file is missing, empty, or readable by other host users | T2 | `task` | `verify`: start fails for each bad secret |
+| INV-17 | A task container cannot resolve external domain names. Only the proxy resolves names, so DNS queries cannot carry data out | T1 | Network and DNS settings in `compose.yaml` | `verify`: resolving an external name from a task container fails |
 
 Notes:
 
@@ -132,11 +133,24 @@ None. Correctness is about isolation and GitHub side effects, which `verify` and
 ## Runtime
 
 - **Network.** The egress proxy is `open`, as the one component that must reach the internet. Task containers sit on an internal network with no other route out.
-- **Egress allowlist** (starting point, finalized in stage 1):
-  - Anthropic: `api.anthropic.com`
+- **Egress allowlist** (starting point, finalized in stage 1 from the proxy's denial log):
+  - Anthropic: `api.anthropic.com` for the API, and `platform.claude.com` for Claude Code's token exchange and refresh
   - GitHub: `github.com`, `api.github.com`, `codeload.github.com`, `objects.githubusercontent.com`
   - Python: `pypi.org`, `files.pythonhosted.org`
   - Go: `proxy.golang.org`, `sum.golang.org`
+- **Claude Code settings in the image**, so it needs only the Anthropic hosts above:
+  - `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`: turns off optional telemetry and error reporting.
+  - `DISABLE_AUTOUPDATER=1`: the version is pinned in the image and changes only with the image.
+  - `ENABLE_CLAUDEAI_MCP_SERVERS=false` and `CLAUDE_CODE_DISABLE_ARTIFACT=1`: no claude.ai connectors or artifacts in tasks.
+- **Egress proxy contract.** Task containers depend only on this contract, so the proxy can be replaced without changing anything else:
+  - An HTTP forward proxy reachable as `egress:3128` on the internal network. Containers find it through `HTTPS_PROXY` and `HTTP_PROXY`.
+  - It tunnels HTTPS with `CONNECT` and does not inspect TLS, so containers need no extra CA certificate.
+  - Its allowlist is `egress/allowlist.txt`: one domain per line, where a leading dot also allows subdomains. The file is the same whatever proxy is used; a small script renders it into that proxy's own config.
+  - It logs every allowed and denied request to stdout, one line each, with the domain.
+  - It is the only component that resolves external names.
+  - `verify` tests the contract's behavior, never the proxy's internals, so a replacement passes or fails the same checks.
+- **Proxy choice.** Squid, in `egress/`. Its `dstdomain` rules match `CONNECT` targets directly, it logs denials clearly, and it is widely packaged. Replacing it means replacing `egress/` with anything that meets the contract.
+- **Tools that ignore the proxy** fail, because task containers have no other route out. The sandbox fails closed.
 - **Ports.** None. Nothing listens.
 - **Watching.** The agent runs headless, and its output streams to the terminal that started the task. Ctrl-C ends the task, which then reports a failure.
 - **GitHub identity.** Two GitHub Apps, one per role, owned by and installed on the user's account for selected repos. Commits, PRs, and comments then show as `<implementer-app>[bot]` or `<reviewer-app>[bot]`, separate from the user and from each other. Fine-grained personal access tokens are not used, because they cannot reach repos where the account is only a collaborator, so a separate bot account's token could not reach the user's repos.
@@ -178,10 +192,14 @@ Each stage ends with its exit criteria met and the user's sign-off before the ne
 
 ## Open questions
 
-- Installation tokens expire after one hour. Is a one-hour task limit acceptable at first, or is a token broker needed so long tasks can refresh?
-- Proxy choice: tinyproxy (smaller, simple domain filter) or Squid (more mature, heavier).
-- Which Claude Code endpoints besides `api.anthropic.com` are needed, and can non-essential traffic be turned off so they are not?
-- The time limit for a task.
+None. The task runner's language is decided at the start of stage 2, as noted under Deviations.
+
+Decided:
+
+- Target repos are public, so rulesets are available. `task` refuses repos without the required rules.
+- Tasks run for at most one hour, matching the installation token's lifetime. The agent stops at 50 minutes. A token broker for longer tasks can be added later without changing the task contract.
+- Claude Code needs only the Anthropic API and token hosts, with nonessential traffic turned off.
+- Squid is the egress proxy, behind a contract that lets it be replaced.
 
 ## Change log
 
