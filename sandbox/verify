@@ -351,7 +351,7 @@ inv9_bypass() {
 		return 1
 	}
 	for mode in always pull_requests_only exempt null; do
-		if jq --argjson m "$( [[ $mode == null ]] && echo null || echo "\"$mode\"")" '.current_user_can_bypass = $m' "$fixture" |
+		if jq --argjson m "$([[ $mode == null ]] && echo null || echo "\"$mode\"")" '.current_user_can_bypass = $m' "$fixture" |
 			jq -e -f "$SANDBOX_DIR/lib/bypass-ok.jq" >/dev/null; then
 			echo "accepted current_user_can_bypass=$mode"
 			return 1
