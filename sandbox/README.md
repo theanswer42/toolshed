@@ -53,7 +53,7 @@ Stage 1 is done: `task <owner/repo> --role implementer|reviewer` starts a harden
 
 ### One-time setup
 
-1. **GitHub Apps.** Create two Apps under your account: an implementer and a reviewer. Give each contents, pull requests and issues **read and write**, plus metadata read. Turn off the webhook. Install each App only on selected repos. `task` narrows the reviewer's token to contents read when it mints it.
+1. **GitHub Apps.** Create two Apps under your account: an implementer and a reviewer. Give each contents, pull requests and issues **read and write**, plus metadata read. Turn off the webhook. Install each App only on selected repos. `task` narrows the reviewer's token to contents read when it mints it. The implementer App also gets **Workflows: read and write**, used only for bootstrap pushes from the host that change `.github/workflows/`. `task` never requests it, and `verify` fails if a task token carries it.
 2. **Keys.** Download each App's private key into a directory only you can read:
    ```sh
    mkdir -p ~/.config/sandbox/secrets && chmod 700 ~/.config/sandbox ~/.config/sandbox/secrets
