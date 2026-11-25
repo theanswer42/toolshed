@@ -10,11 +10,12 @@ ARG GH_VERSION=2.105.0
 ARG GH_SHA256=79e7ab5db738c48777b696e374f8b428f0647debfb424f44d2f426370407fe2f
 ARG BETTERLEAKS_VERSION=1.10.1
 ARG BETTERLEAKS_SHA256=c174b42d7aa60caf58c0c3e555c0e4bed01fe6b0d99a412bce777b5af4ce913e
-ARG CLAUDE_CODE_VERSION=2.1.331
-ARG CLAUDE_CODE_SHA256=4c00839cf46beb2b38ec310105f2d538f7f9321fe46c636299b74bcab94626b1
+ARG CLAUDE_CODE_VERSION=2.1.332
+ARG CLAUDE_CODE_SHA256=a2df1f41bb00250992926420d0063f89b127cb81abdd284dbefb80c50ff1d026
 ARG PRE_COMMIT_VERSION=4.7.0
 ARG PYTHON_DEFAULT=3.13
-ARG PYTHON_EXTRA=3.14
+# Extra interpreters, oldest first; check-updates compares the last one.
+ARG PYTHON_EXTRA="3.14 3.15"
 
 SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 
@@ -45,7 +46,7 @@ RUN cd /tmp \
 RUN UV_PYTHON_INSTALL_DIR=/opt/uv/python UV_PYTHON_BIN_DIR=/usr/local/bin \
     uv python install --preview-features python-install-default --default "$PYTHON_DEFAULT" \
  && UV_PYTHON_INSTALL_DIR=/opt/uv/python UV_PYTHON_BIN_DIR=/usr/local/bin \
-    uv python install "$PYTHON_EXTRA" \
+    uv python install $PYTHON_EXTRA \
  && UV_PYTHON_INSTALL_DIR=/opt/uv/python UV_TOOL_DIR=/opt/uv/tools UV_TOOL_BIN_DIR=/usr/local/bin \
     uv tool install --python "$PYTHON_DEFAULT" "pre-commit==${PRE_COMMIT_VERSION}" \
  && rm -rf /root/.cache

@@ -64,7 +64,7 @@ cc_stable=$(fetch https://downloads.claude.ai/claude-code-releases/stable 2>/dev
 cc_latest=$(fetch https://downloads.claude.ai/claude-code-releases/latest 2>/dev/null) || cc_latest=
 report claude-code "$(arg CLAUDE_CODE_VERSION)" "$cc_latest" "channel latest; stable is $cc_stable"
 check pre-commit "$(arg PRE_COMMIT_VERSION)" latest_pypi pre-commit
-py=$(arg PYTHON_EXTRA)
+py=$(arg PYTHON_EXTRA | tr -d '"' | awk '{print $NF}')
 next_py=$(fetch https://endoflife.date/api/python.json 2>/dev/null |
 	jq -r --arg today "$(date -u +%F)" '[.[] | select(.releaseDate <= $today)][0].cycle') || next_py=
 report "python (newest baked)" "$py" "$next_py" "patch releases come with each rebuild"
