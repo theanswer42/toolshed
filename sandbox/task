@@ -248,6 +248,14 @@ rules=$(api token GET "/repos/$repo/rules/branches/$default_branch") ||
 missing=$(jq -r -f "$SANDBOX_DIR/lib/missing-rules.jq" <<<"$rules")
 [[ -z $missing ]] || die "$repo@$default_branch is missing required rules: $missing"
 
+# The bypass list is hidden from App tokens, so ask GitHub directly whether
+# this token's App can bypass any ruleset that applies to the branch.
+for ruleset_id in $(jq -r '[.[].ruleset_id] | unique | .[]' <<<"$rules"); do
+	ruleset=$(api token GET "/repos/$repo/rulesets/$ruleset_id") || die "could not read ruleset $ruleset_id on $repo"
+	jq -e -f "$SANDBOX_DIR/lib/bypass-ok.jq" <<<"$ruleset" >/dev/null ||
+		die "$app_slug can bypass ruleset $ruleset_id on $repo; remove it from the bypass list"
+done
+
 codeowners=$(api token GET "/repos/$repo/contents/.github/CODEOWNERS?ref=$default_branch" | jq -r .content | base64 -d) ||
 	die "$repo has no .github/CODEOWNERS"
 "$SANDBOX_DIR/lib/codeowners-ok" "$GITHUB_USER" <<<"$codeowners" || die "$repo: .github/CODEOWNERS must contain only '* @$GITHUB_USER'"

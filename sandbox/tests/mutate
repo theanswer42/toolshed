@@ -84,6 +84,7 @@ mutations=(
 	"extra-secret INV-7 mount a third secret"
 	"skip-codeowner-rule INV-9 stop requiring code-owner review"
 	"loose-codeowners INV-9 accept any CODEOWNERS"
+	"allow-bypass INV-9 accept an App that can bypass the ruleset"
 	"shared-volume INV-13 share the work volume between tasks"
 	"no-pids-limit INV-14 drop the PID limit"
 	"skip-mode-check INV-16 accept secrets readable by others"
@@ -130,6 +131,7 @@ mut_extra-secret() {
 	edit "$m/compose.yaml" '    file: ${SANDBOX_CLAUDE_TOKEN_FILE:-/dev/null}' $'    file: ${SANDBOX_CLAUDE_TOKEN_FILE:-/dev/null}\n  extra:\n    file: ${SANDBOX_CLAUDE_TOKEN_FILE:-/dev/null}'
 }
 mut_skip-codeowner-rule() { edit "$m/lib/missing-rules.jq" '(if any(pr[]; .require_code_owner_review == true) then empty else "pull_request: code-owner review" end),' ''; }
+mut_allow-bypass() { edit "$m/lib/bypass-ok.jq" '.current_user_can_bypass == "never"' '.current_user_can_bypass != "always"'; }
 mut_loose-codeowners() { edit "$m/lib/codeowners-ok" '[[ $body == "* @$user" ]]' '[[ $body == *"@$user"* ]]'; }
 mut_shared-volume() { edit "$m/compose.yaml" $'volumes:\n  work:\n' $'volumes:\n  work:\n    name: sandbox-shared-work\n'; }
 mut_no-pids-limit() { edit "$m/compose.yaml" '  pids_limit: ${SANDBOX_PIDS:-1024}' ''; }

@@ -42,7 +42,7 @@ Stage 1 is done: `task <owner/repo> --role implementer|reviewer` starts a harden
 
 1. `task` checks its arguments, the config file, and the secret files (INV-16).
 2. It signs an App JWT with `openssl`, finds the App's installation on the repo, and mints an installation token for that one repo, with the role's permissions (INV-7). If the token GitHub returns has other permissions, `task` stops.
-3. It checks the default branch's rules and `.github/CODEOWNERS` (INV-9).
+3. It checks the default branch's rules and `.github/CODEOWNERS`, and asks GitHub whether the task's own App can bypass any ruleset that applies. It refuses the repo unless the answer is `never` (INV-9).
 4. It writes the token and a copy of the Claude token to `$XDG_RUNTIME_DIR/sandbox/<id>/`, a 0700 directory on tmpfs.
 5. It starts the proxy if needed, then runs the task container. The entry point copies `~/.claude` from the image, sets the git identity to the App's bot, clones the repo, exports `CLAUDE_CODE_OAUTH_TOKEN`, and opens a shell.
 6. When the shell exits, or `task` gets a signal, cleanup deletes the token directory, then the container and volumes (INV-15). With `--keep`, the container is stopped and the volumes are kept, but the tokens are still deleted.
@@ -73,7 +73,7 @@ Stage 1 is done: `task <owner/repo> --role implementer|reviewer` starts a harden
    # optional: SECRETS_DIR, SANDBOX_CPUS (4), SANDBOX_MEMORY (8g), SANDBOX_PIDS (1024)
    ```
 5. **Each target repo**, which must be public (see `PROJECT_SPEC.md`, Repo setup):
-   - A ruleset on the default branch with no bypass list. It requires a pull request with one approval and code-owner review, dismisses stale approvals, requires approval of the latest push, and blocks force pushes and deletion.
+   - A ruleset on the default branch. It requires a pull request with one approval and code-owner review, dismisses stale approvals, requires approval of the latest push, and blocks force pushes and deletion. Its only bypass actor is the **Repository admin** role, in **pull requests only** mode, so you can merge your own PRs (never push directly) and the Apps can't. [`github/ta_default_ruleset.json`](../github/ta_default_ruleset.json) holds a copy. Import it under Settings → Rules → Rulesets → New ruleset → Import a ruleset, or run `gh api -X POST repos/<owner>/<repo>/rulesets --input github/ta_default_ruleset.json`.
    - `.github/CODEOWNERS` containing only `* @your-login`.
    - Secret scanning and push protection turned on.
    - Both Apps installed.
@@ -127,4 +127,5 @@ sandbox/tests/mutate --online owner/repo        # plus the token mutations
 - **2026-11-24: the allowlist is rendered at build time.** `render-squid.sh` runs in the egress Dockerfile and rejects any entry that isn't a plain domain. A change to `allowlist.txt` takes effect after `docker compose build egress`. Changing it at runtime would need a writable config.
 - **2026-11-24: `storage.googleapis.com` stays off the allowlist** (#3). `proxy.golang.org` redirects many module downloads to signed Cloud Storage URLs. The proxy can't tell buckets apart without inspecting TLS, so allowing them would open uploads to any public-writable bucket. Go builds that need redirected modules fail loudly. betterleaks runs as pre-commit's `system` hook from the pinned binary, rather than being built from Go source.
 - **2026-11-24: uv doesn't download interpreters.** `UV_PYTHON_DOWNLOADS=never`. Python 3.13 (the default) and 3.14 are baked into the image. Other versions would need GitHub release-asset hosts and a writable install directory.
+- **2026-11-25: the owner can bypass, the Apps can't** (#3). With you as the only code owner and no bypass list, you could never merge a PR of your own: GitHub never counts an approval on a PR you authored or last pushed. You are now a bypass actor (Repository admin role, pull requests only). App tokens can't see the bypass list, so `task` checks `current_user_can_bypass` with the task's token instead, which tests exactly what matters: that this App can't bypass. The alternatives were a second human account as code owner, or making your own edits as the App, which blurs who wrote what.
 - **2026-11-24: one stage 1 exit code.** Every failure before the shell starts exits 64. After that, `task` exits with the shell's status. Stage 2 adds the outcome codes.

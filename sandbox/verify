@@ -344,7 +344,26 @@ inv9_codeowners() {
 		fi
 	done
 }
+inv9_bypass() {
+	local fixture=$SANDBOX_DIR/tests/fixtures/ruleset-app-view.json mode
+	jq -e -f "$SANDBOX_DIR/lib/bypass-ok.jq" "$fixture" >/dev/null || {
+		echo "rejected a ruleset the App cannot bypass"
+		return 1
+	}
+	for mode in always pull_requests_only exempt null; do
+		if jq --argjson m "$( [[ $mode == null ]] && echo null || echo "\"$mode\"")" '.current_user_can_bypass = $m' "$fixture" |
+			jq -e -f "$SANDBOX_DIR/lib/bypass-ok.jq" >/dev/null; then
+			echo "accepted current_user_can_bypass=$mode"
+			return 1
+		fi
+	done
+	if jq 'del(.current_user_can_bypass)' "$fixture" | jq -e -f "$SANDBOX_DIR/lib/bypass-ok.jq" >/dev/null; then
+		echo "accepted a ruleset without current_user_can_bypass"
+		return 1
+	fi
+}
 check INV-9 "preflight refuses a ruleset missing any required rule" inv9_rules
+check INV-9 "preflight refuses a ruleset the task's App can bypass" inv9_bypass
 check INV-9 "preflight accepts only CODEOWNERS '* @<user>'" inv9_codeowners
 
 # --- INV-13: separate volumes per task --------------------------------------
