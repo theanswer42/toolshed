@@ -584,7 +584,10 @@ $find_keys
 echo '@@keys-end'
 echo \"@@token-in-clone \$(grep -rlF -f /run/secrets/github_token /work 2>/dev/null | wc -l)\"
 echo \"@@claude-in-clone \$(grep -rlF -f /run/secrets/claude_token /work 2>/dev/null | wc -l)\"
-betterleaks git --no-banner --no-color --redact /work >/dev/null 2>&1; echo \"@@betterleaks-clone \$?\"
+cat >/tmp/betterleaks.toml <<'BETTERLEAKS_CONFIG'
+$(<"$SANDBOX_DIR/../.betterleaks.toml")
+BETTERLEAKS_CONFIG
+betterleaks git --no-banner --no-color --redact -c /tmp/betterleaks.toml /work >/dev/null 2>&1; echo \"@@betterleaks-clone \$?\"
 git commit -q --allow-empty -m 'verify: this push must be rejected' >/dev/null 2>&1
 if git push -q origin HEAD:refs/heads/$branch >/dev/null 2>&1; then echo '@@push-branch ok'; git push -q origin --delete $branch >/dev/null 2>&1; else echo '@@push-branch rejected'; fi
 if [ $role = implementer ]; then
