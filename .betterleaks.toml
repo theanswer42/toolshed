@@ -1,6 +1,11 @@
 # Project-owned betterleaks config, generated from the defaults of betterleaks
 # v1.10.1 with `betterleaks config show`. It changes only through review
 # (principle 10). Add false-positive filters with a comment giving the reason.
+#
+# Filters added here:
+# - `(?:^|/)\.betterleaks\.toml$` in the path prefilter: this file holds the
+#   rules' own regexes, which match themselves (for example the AWS Bedrock
+#   rule). Upstream skips `gitleaks.toml` for the same reason.
 
 title = 'betterleaks config'
 minVersion = 'v8.25.0'
@@ -8,6 +13,7 @@ betterleaksMinVersion = 'v1.8.0'
 prefilter = '''
 matchesAny(attributes["path"], [
   `gitleaks\.toml`,
+  `(?:^|/)\.betterleaks\.toml$`,
   `(?i)\.(?:bmp|gif|jpe?g|png|svg|tiff?)$`,
   `(?i)\.(?:eot|[ot]tf|woff2?)$`,
   `(?i)\.(?:docx?|xlsx?|pdf|bin|socket|vsidx|v2|suo|wsuo|dll|pdb|exe|gltf)$`,
