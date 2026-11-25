@@ -1,0 +1,22 @@
+# Weekly update PRs (base spec: Dependabot). Dependabot opens them as
+# dependabot[bot], so the owner can approve them, and CI's verify runs on
+# each. Pins Dependabot can't see (the ARGs in sandbox/image/Dockerfile and
+# the pre-commit hooks) are reported by sandbox/check-updates.
+version: 2
+updates:
+  - package-ecosystem: docker
+    directories:
+      - /sandbox/image
+      - /sandbox/egress
+    schedule:
+      interval: weekly
+    groups:
+      base-images:
+        patterns: ["*"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]

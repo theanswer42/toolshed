@@ -10,6 +10,7 @@ Read `../python/working-with-agents.md` (Part 1; Part 2 does not apply, see the 
 - Show each check fails without its protection: `sandbox/tests/mutate [--online <owner/repo>]`
 - Lint: `pre-commit run --all-files` (shellcheck, shfmt, betterleaks)
 - After changing `task --help`: `sandbox/docs/generate-cli`
+- Pins with newer releases: `sandbox/check-updates` (exit 1 means updates are available)
 
 ## Notes
 

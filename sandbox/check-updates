@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+# check-updates: report pinned tools that have newer releases.
+#
+# Covers what Dependabot can't see: the version and SHA-256 pins in
+# image/Dockerfile's ARGs, betterleaks in .pre-commit-config.yaml and the CI
+# workflow, and the pre-commit hook revisions. Dependabot covers the base
+# image digests (image/, egress/) and the GitHub Actions SHAs.
+#
+#   check-updates          print a table; read-only, changes nothing
+#
+# Exit status: 0 everything is current, 1 an update is available, 2 a check
+# could not be completed. Set GH_TOKEN to avoid GitHub's anonymous rate limit.
+set -euo pipefail
+
+dir=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)
+repo=$(cd "$dir/.." && pwd)
+dockerfile=$dir/image/Dockerfile
+precommit=$repo/.pre-commit-config.yaml
+workflow=$repo/.github/workflows/sandbox.yml
+
+updates=0 errors=0
+
+fetch() {
+	local auth=()
+	[[ $1 == https://api.github.com/* && -n ${GH_TOKEN:-} ]] && auth=(-H "Authorization: Bearer $GH_TOKEN")
+	curl -fsS --max-time 20 "${auth[@]}" "$1"
+}
+gh_latest() { fetch "https://api.github.com/repos/$1/releases/latest" | jq -r .tag_name; }
+latest_tag() { git ls-remote --tags --refs "https://github.com/$1" | sed 's|.*refs/tags/||' | sort -V | tail -1; }
+arg() { sed -n "s/^ARG $1=//p" "$dockerfile"; }
+latest_go() { fetch 'https://go.dev/dl/?mode=json' | jq -r '.[0].version' | sed 's/^go//'; }
+latest_release() { gh_latest "$1" | sed 's/^v//'; }
+latest_pypi() { fetch "https://pypi.org/pypi/$1/json" | jq -r .info.version; }
+
+# report NAME CURRENT LATEST [NOTE]
+report() {
+	local name=$1 current=$2 latest=$3 note=${4:-} status
+	if [[ -z $current || -z $latest || $latest == null ]]; then
+		status=ERROR
+		errors=$((errors + 1))
+	elif [[ $current == "$latest" ]]; then
+		status=ok
+	else
+		status=UPDATE
+		updates=$((updates + 1))
+	fi
+	printf '%-8s %-30s %-14s %-14s %s\n' "$status" "$name" "${current:-?}" "${latest:-?}" "$note"
+}
+# check NAME CURRENT COMMAND...: run COMMAND for the latest version.
+check() {
+	local name=$1 current=$2 latest
+	shift 2
+	latest=$("$@" 2>/dev/null) || latest=
+	report "$name" "$current" "$latest"
+}
+
+printf '%-8s %-30s %-14s %-14s %s\n' STATUS TOOL PINNED LATEST NOTE
+
+# image/Dockerfile ARGs. Bumping one means updating its SHA-256 ARG too.
+check go "$(arg GO_VERSION)" latest_go
+check gh "$(arg GH_VERSION)" latest_release cli/cli
+check betterleaks "$(arg BETTERLEAKS_VERSION)" latest_release betterleaks/betterleaks
+cc_stable=$(fetch https://downloads.claude.ai/claude-code-releases/stable 2>/dev/null) || cc_stable='?'
+cc_latest=$(fetch https://downloads.claude.ai/claude-code-releases/latest 2>/dev/null) || cc_latest=
+report claude-code "$(arg CLAUDE_CODE_VERSION)" "$cc_latest" "channel latest; stable is $cc_stable"
+check pre-commit "$(arg PRE_COMMIT_VERSION)" latest_pypi pre-commit
+py=$(arg PYTHON_EXTRA)
+next_py=$(fetch https://endoflife.date/api/python.json 2>/dev/null |
+	jq -r --arg today "$(date -u +%F)" '[.[] | select(.releaseDate <= $today)][0].cycle') || next_py=
+report "python (newest baked)" "$py" "$next_py" "patch releases come with each rebuild"
+
+# betterleaks is also pinned outside the Dockerfile; all pins must agree.
+bl_hook=$(awk '/betterleaks\/betterleaks/{f=1} f&&/rev:/{print $2; exit}' "$precommit" | sed 's/^v//')
+bl_ci=$(sed -n 's|.*betterleaks/releases/download/v\([0-9.]*\)/.*|\1|p' "$workflow" | head -1)
+bl_ci_image=$(sed -n 's|.*ghcr.io/betterleaks/betterleaks:v\([0-9.]*\)@.*|\1|p' "$workflow" | head -1)
+for pin in "pre-commit hook:$bl_hook" "CI binary:$bl_ci" "CI image:$bl_ci_image"; do
+	report "betterleaks (${pin%%:*})" "${pin#*:}" "$(arg BETTERLEAKS_VERSION)" "must match image/Dockerfile"
+done
+
+# pre-commit hook revisions (pre-commit autoupdate would also bump these).
+for hook in shellcheck-py/shellcheck-py scop/pre-commit-shfmt; do
+	current=$(awk -v r="$hook" '$0 ~ r {f=1} f&&/rev:/{print $2; exit}' "$precommit")
+	check "hook ${hook#*/}" "$current" latest_tag "$hook"
+done
+
+echo
+if ((errors)); then
+	echo "$errors check(s) could not be completed"
+	exit 2
+fi
+if ((updates)); then
+	echo "$updates update(s) available"
+	exit 1
+fi
+echo "Everything is current"

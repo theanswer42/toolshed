@@ -117,6 +117,12 @@ sandbox/tests/mutate                            # each check fails without its p
 sandbox/tests/mutate --online owner/repo        # plus the token mutations
 ```
 
+### Updates
+
+- **Dependabot** (`.github/dependabot.yml`) opens weekly PRs for the base image digests in `image/` and `egress/`, and for the GitHub Actions SHAs.
+- **`sandbox/check-updates`** reports the pins Dependabot can't see: the tool versions in `image/Dockerfile`'s `ARG`s (Go, gh, betterleaks, Claude Code, pre-commit, Python), betterleaks's other pins, and the pre-commit hook revisions. It exits 1 when an update is available and 2 when a check fails, so a scheduled workflow can flag it. Bumping a tool means updating its version and SHA-256 `ARG` together.
+- After merging an update, rebuild the images. A rebuild also picks up the newest Debian packages that `apt-get install` installs.
+
 `verify --online` pushes a branch named `verify-implementer-<id>` and then deletes it. It also tries to push an empty commit to the default branch, which the ruleset must reject.
 
 ## Decisions
@@ -132,4 +138,5 @@ sandbox/tests/mutate --online owner/repo        # plus the token mutations
 - **2026-11-24: uv doesn't download interpreters.** `UV_PYTHON_DOWNLOADS=never`. Python 3.13 (the default) and 3.14 are baked into the image. Other versions would need GitHub release-asset hosts and a writable install directory.
 - **2026-11-25: the owner can bypass, the Apps can't** (#3). With you as the only code owner and no bypass list, you could never merge a PR of your own: GitHub never counts an approval on a PR you authored or last pushed. You are now a bypass actor (Repository admin role, pull requests only). App tokens can't see the bypass list, so `task` checks `current_user_can_bypass` with the task's token instead, which tests exactly what matters: that this App can't bypass. The alternatives were a second human account as code owner, or making your own edits as the App, which blurs who wrote what.
 - **2026-11-25: tasks default to Opus.** `"model": "opus"` in the managed settings. Without it, Claude Code 2.1.331 used `claude-sonnet-5-5`, its default for this plan; with it, tasks run `claude-opus-5-5`. The alias follows whatever the pinned Claude Code version maps `opus` to, so a newer Opus arrives with an image update. It sets a default, not a lock: `--model` still overrides it. `availableModels: ["opus"]` didn't stop `--model sonnet` either, so it isn't set.
+- **2026-11-25: pinned base images, bumped by Dependabot; no `dist-upgrade`.** The digest pins the base layer only; packages installed with apt are current at every build. An upgrade step would make each build differ with no record, which the pin exists to prevent, and it would be a deviation from the base spec. Weekly digest bumps bring the base image's security updates as reviewable PRs. Squid is the priority: it parses all agent traffic and is the one container with internet access. The task image matters less, because the agent already runs arbitrary code there and the kernel is the host's.
 - **2026-11-24: one stage 1 exit code.** Every failure before the shell starts exits 64. After that, `task` exits with the shell's status. Stage 2 adds the outcome codes.
