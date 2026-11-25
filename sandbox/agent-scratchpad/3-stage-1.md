@@ -16,6 +16,9 @@ Builds stage 1 of `sandbox/PROJECT_SPEC.md` on the user's machine (rootless Dock
 - `release-assets.githubusercontent.com` is added to the allowlist. It is GitHub's read-only release download host, needed by shellcheck-py.
 - The reviewer App has contents read at the App level. That turned out to be a second layer for INV-8, so the `reviewer-write` mutation mints with the implementer App to show the check itself bites.
 
+- Review on PR #6: the task token is revoked with `DELETE /installation/token` in cleanup. `verify` checks for `task`'s "token revoked" line, which `task` prints only on HTTP 204. Replaying the token after exit would have meant copying a live token out of the container into a log, which INV-5 forbids.
+- Neither App has the Workflows permission. With the owner's bypass, workflow changes are the owner's own PRs. That reverses the earlier decision to give the implementer App Workflows for bootstrap pushes.
+
 ## Found by the mutations and checks
 
 - The allowlist renderer stripped inner whitespace (`a b.com` became `ab.com`).
@@ -25,11 +28,11 @@ Builds stage 1 of `sandbox/PROJECT_SPEC.md` on the user's machine (rootless Dock
 
 ## Open questions
 
-- Raised in the PR: new wording for INV-18, and a Repo setup note about the reviewer App's permissions.
+- None open. The spec changes are applied in PR #6, pending the owner's approval of it.
 - Not covered in stage 1: Go modules that redirect to Cloud Storage fail. That's acceptable until a Go project needs them.
 
 ## Promoted
 
 - README Decisions: token copies, `~/.claude` split, Claude token in the environment, DNS, caches, native Claude binary, allowlist rendering, GCS, uv downloads, exit code.
 - `sandbox/CLAUDE.md`: rootless Docker quirk; don't read the secrets.
-- PR description: the INV-18 wording proposal and the allowlist additions.
+- `PROJECT_SPEC.md`: INV-7, INV-9, INV-18, Repo setup, and the allowlist (change log, 2026-11-25).

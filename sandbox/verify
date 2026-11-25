@@ -657,6 +657,11 @@ fi
 		}
 	}
 	check INV-15 "$role: container, volumes and token files are removed on exit" inv15_gone
+	if grep -qx 'task: token revoked' <<<"$out"; then
+		pass INV-7 "$role: the token is revoked on GitHub when the task ends"
+	else
+		fail INV-7 "$role: the token is revoked on GitHub when the task ends" "$(grep 'revoke' <<<"$out")"
+	fi
 done
 
 # INV-5: the real Claude token and App keys appear nowhere in the image.

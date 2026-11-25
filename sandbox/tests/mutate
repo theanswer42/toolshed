@@ -94,6 +94,7 @@ mutations=(
 online_mutations=(
 	"reviewer-write INV-8 mint the reviewer token with contents write"
 	"no-cleanup INV-15 skip volume removal on exit"
+	"no-revoke INV-7 skip token revocation on exit"
 )
 
 mut_host-mount() { edit "$m/compose.yaml" '      - cache:/cache' $'      - cache:/cache\n      - /etc/hostname:/host-hostname:ro'; }
@@ -153,6 +154,7 @@ mut_reviewer-write() {
 	edit "$m/task" 'if [[ $role == implementer ]]; then app_id=$IMPLEMENTER_APP_ID; else app_id=$REVIEWER_APP_ID; fi' 'app_id=$IMPLEMENTER_APP_ID'
 	edit "$m/task" 'app_key="$SECRETS_DIR/${role}_app_key"' 'app_key="$SECRETS_DIR/implementer_app_key"'
 }
+mut_no-revoke() { edit "$m/task" '	if [[ -s $task_dir/token.curl ]]; then' '	if false; then'; }
 mut_no-cleanup() { edit "$m/task" '			docker volume rm "${project}_work" "${project}_cache" >/dev/null 2>&1 || true' '			:'; }
 
 all=("${mutations[@]}")

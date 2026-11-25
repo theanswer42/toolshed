@@ -166,8 +166,20 @@ started=0
 cleanup() {
 	local status=$?
 	trap - EXIT INT TERM
-	# The token files go first: they are useless after the task and must not
-	# outlive it (INV-5, INV-7).
+	# Revoke the installation token first: deleting the file alone leaves it
+	# valid on GitHub for up to an hour. A failure is reported but never stops
+	# cleanup. Then the token files go: they must not outlive the task (INV-5,
+	# INV-7).
+	if [[ -s $task_dir/token.curl ]]; then
+		local code
+		code=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' -X DELETE -K "$task_dir/token.curl" \
+			-H 'Accept: application/vnd.github+json' "$API/installation/token" 2>/dev/null) || code=000
+		if [[ $code == 204 ]]; then
+			echo "task: token revoked" >&2
+		else
+			echo "task: could not revoke the token (HTTP $code); it expires within an hour" >&2
+		fi
+	fi
 	rm -rf "$task_dir"
 	if ((started)); then
 		if ((keep)); then
@@ -262,7 +274,8 @@ codeowners=$(api token GET "/repos/$repo/contents/.github/CODEOWNERS?ref=$defaul
 
 bot_login="${app_slug}[bot]"
 bot_id=$(api token GET "/users/${app_slug}%5Bbot%5D" | jq -r .id) || die "could not look up $bot_login"
-rm -f "$task_dir/token.curl" "$task_dir/response"
+# token.curl stays until cleanup, which uses it to revoke the token.
+rm -f "$task_dir/response"
 
 # Claude Code token: per-task copy, readable in the container like github_token.
 cp "$claude_token" "$task_dir/claude_token"
