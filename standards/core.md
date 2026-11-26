@@ -132,11 +132,11 @@ Each principle has a rule, the reason for it, and what a reviewing agent checks.
 
 ### 11. One way to build
 
-**Rule.** Follow the default stack and layout in the stack document that applies. A deviation needs a reason recorded in the project spec.
+**Rule.** Follow the default stack and layout in the stack document that applies. A deviation needs a reason recorded in the project spec. Prefer the standard library and platform APIs. Add a dependency only for substantial work that would be costly or risky to write, never for simple functionality, and record a new runtime dependency's reason in the project spec.
 
 **Why.** When every project has the same shape, skimming works because anomalies stand out.
 
-**Check.** Layout and dependencies match the defaults or a recorded deviation. New dependencies are listed in the change report.
+**Check.** Layout and dependencies match the defaults or a recorded deviation. New dependencies are listed in the change report, each with its reason. A new runtime dependency is treated as at least T2.
 
 ### 12. Fail loudly
 
