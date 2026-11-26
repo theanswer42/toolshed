@@ -42,7 +42,28 @@ restore_proxy() {
 	docker compose -p sandbox-egress -f "$SANDBOX_DIR/compose.yaml" up -d --wait egress >/dev/null 2>&1 ||
 		echo "mutate: could not restore the real egress proxy" >&2
 }
+# Mutations break cleanup on purpose (no-cleanup, shared volumes, sabotaged
+# containers), so after each one, remove every task or verify container and
+# volume that did not exist when mutate started. Don't start your own tasks
+# while mutate runs: they would be swept too.
+sandbox_resources() {
+	docker ps -a --filter name=sandbox-task- --filter name=sandbox-verify- --format '{{.Names}}'
+	docker volume ls -q --filter name=sandbox-task- --filter name=sandbox-verify-
+}
+before=$(sandbox_resources | sort)
+sweep() {
+	local name
+	comm -13 <(printf '%s\n' "$before") <(sandbox_resources | sort) | while read -r name; do
+		[[ -n $name ]] || continue
+		docker rm -f "$name" >/dev/null 2>&1 || true
+	done
+	comm -13 <(printf '%s\n' "$before") <(sandbox_resources | sort) | while read -r name; do
+		[[ -n $name ]] || continue
+		docker volume rm "$name" >/dev/null 2>&1 || echo "mutate: could not remove volume $name" >&2
+	done
+}
 cleanup() {
+	sweep
 	restore_proxy
 	docker volume rm sandbox-shared-work sandbox-shared-home >/dev/null 2>&1 || true
 	docker image rm sandbox-dev:mutant sandbox-egress:mutant >/dev/null 2>&1 || true
@@ -182,6 +203,7 @@ for entry in "${all[@]}"; do
 		survived=$((survived + 1))
 		tail -8 <<<"$out" | while IFS= read -r l; do printf '          | %s\n' "$l"; done
 	fi
+	sweep
 	restore_proxy
 	docker volume rm sandbox-shared-work sandbox-shared-home >/dev/null 2>&1 || true
 done

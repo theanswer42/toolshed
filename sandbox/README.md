@@ -123,6 +123,8 @@ sandbox/tests/mutate --online owner/repo        # plus the token mutations
 - **`sandbox/check-updates`** reports the pins Dependabot can't see: the tool versions in `image/Dockerfile`'s `ARG`s (Go, gh, betterleaks, Claude Code, pre-commit, Python), betterleaks's other pins, and the pre-commit hook revisions. It exits 1 when an update is available and 2 when a check fails, so a scheduled workflow can flag it. Bumping a tool means updating its version and SHA-256 `ARG` together.
 - After merging an update, rebuild the images. A rebuild also picks up the newest Debian packages that `apt-get install` installs.
 
+`tests/mutate` removes every task and verify container and volume that a mutation leaves behind. Don't run your own tasks while it runs, because they would be removed too.
+
 `verify --online` pushes a branch named `verify-implementer-<id>` and then deletes it. It also tries to push an empty commit to the default branch, which the ruleset must reject.
 
 ## Decisions
