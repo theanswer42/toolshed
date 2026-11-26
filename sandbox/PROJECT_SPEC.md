@@ -6,6 +6,10 @@ Runs a coding agent on one task inside an ephemeral container, so it can work in
 
 The user starts tasks by hand and can watch their output. A future orchestrator will start tasks automatically; it is a separate project and out of scope here.
 
+## Applies
+
+`core`, `stacks/shell`. See `standards/README.md`.
+
 ## Entities
 
 | Entity | Description | Key fields | Relations |
@@ -36,7 +40,7 @@ Rules:
 
 - **Ask before building.** An implementer that is blocked before writing code posts its questions on the issue and stops. Once it has pushed a branch, it opens a draft PR, and all later questions go on that PR. Work is never left only in the container.
 - **PR scope.** Only PRs whose head branch is in the same repo are eligible. An implementer works only on PRs opened by the implementer App. A reviewer may review any eligible PR.
-- **What a reviewer checks.** The PR against the repo's project spec and agent spec, per the reviewing-agent rules in `python/working-with-agents.md`. Verdicts are posted as one review: a comment review, or request changes when a principle fails.
+- **What a reviewer checks.** The PR against the repo's project spec and agent spec, per the reviewing-agent rules in `standards/core.md`. Verdicts are posted as one review: a comment review, or request changes when a principle fails.
 
 ## State machines
 
@@ -207,13 +211,11 @@ Each stage ends with its exit criteria met and the user's sign-off before the ne
 | --- | --- | --- |
 | The future orchestrator | The `task` command, its arguments, and its exit codes | `--help` output, generated into `docs/cli.md` |
 
-## Deviations from the base spec
+## Deviations from the applied standards
 
-- **Not a Python app.** Part 2 of `python/working-with-agents.md` does not apply. The project is a Dockerfile, a compose file, a proxy config, a host-side `task` script, and an in-image task runner.
-- **Language.** `task` is shell, because nearly every step is a `docker`, `git`, or `gh` call. The task runner's language is decided at the start of stage 2: shell if it stays small, Python with the base spec's Part 2 if it grows logic worth testing.
-- **Shell checks.** `shellcheck` and `shfmt` replace ruff and ty for shell code. betterleaks and pre-commit apply as specified.
-- **Properties are a `verify` script.** Each isolation invariant gets an assertion run against a real task container. `verify` needs Docker, so it runs on the host by hand and in CI, per the decision to keep Docker builds out of the sandbox.
-- **No container contract.** The sandbox is not an app the runner deploys, so principle 15 and the Container contract do not apply.
+- **Not a service.** The sandbox is not an app the runner deploys, so `project-types/service.md` does not apply. The project is a Dockerfile, a compose file, a proxy config, a host-side `task` script, and an in-image task runner.
+- **Language.** `task` is shell, because nearly every step is a `docker`, `git`, or `gh` call. The task runner's language is decided at the start of stage 2: shell if it stays small, Python with `standards/stacks/python.md` if it grows logic worth testing.
+- **`verify` needs Docker**, so it runs on the host by hand and in CI, per the decision to keep Docker builds out of the sandbox.
 
 ## Open questions
 
@@ -231,3 +233,4 @@ Decided:
 | Date | Change | Approved by |
 | --- | --- | --- |
 | 2026-11-25 | Stage 1 (#3, PR #6): INV-18 reworded for managed settings and a tmpfs `~/.claude`; INV-7 adds that task tokens never carry `workflows`; INV-9 and Repo setup allow only the admin role's pull-requests-only bypass, checked by `task`; allowlist adds `release-assets.githubusercontent.com` and records `storage.googleapis.com` as excluded; Repo setup lists the App permissions | @theanswer42, by approving PR #6 |
+| 2026-11-26 | Applies section added; Deviations reworded for `standards/` (#11). No change to invariants | @theanswer42, by approving the PR |

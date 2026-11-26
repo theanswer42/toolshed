@@ -1,6 +1,6 @@
 # sandbox
 
-Read `../python/working-with-agents.md` (Part 1; Part 2 does not apply, see the spec's Deviations) and `PROJECT_SPEC.md` before changing anything. `README.md` explains how the pieces fit.
+Read `PROJECT_SPEC.md` and the standards its Applies section lists (`../standards/core.md` and `../standards/stacks/shell.md`) before changing anything. `README.md` explains how the pieces fit.
 
 ## Commands
 
