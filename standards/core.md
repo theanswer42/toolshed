@@ -198,8 +198,8 @@ The reviewing agent looks first for these: loosened tests, invariants without pr
 
 - **README.** Sections in this order: Overview, Architecture (components and data flow), Running locally, Decisions. Keep it to a few screens. Detail lives in code, docstrings, and `docs/`.
 - **Decisions.** One entry per decision: the date, what was decided, the alternatives considered, the reason, and the issue number if there is one.
-- **Interface docs.** Generated from code where the stack allows it. Otherwise a test compares the documented interface with the code and fails on anything missing or extra. The stack document says how.
-- **CLI docs.** `docs/cli.md`, generated from each command's `--help` output by `make docs`. A test fails if the committed file differs from freshly generated output.
+- **Interface docs.** Generated from code where the stack allows it. Either way, a test compares the documented interface with the code and fails on anything missing or extra. The stack document says how.
+- **CLI docs.** `docs/cli.md`, generated from each command's `--help` output by a committed script or build target. A test fails if the committed file differs from freshly generated output. The stack document names the command.
 - **Issues.** GitHub issues, managed through the `gh` CLI. Each issue gets its own branch and pull request, opened through gh, with the change report as the PR body. Commit messages and branch names include the issue number, as in `fix: reversal balance (#42)`.
 - **Scratchpad files.** Name them `agent-scratchpad/<issue>-<slug>.md`, or `<date>-<slug>.md` before issues exist. Use this template:
 
@@ -225,7 +225,8 @@ These rules apply to any project that calls an external service. The stack docum
 - Clients for external services are part of the shell.
 - Every request sets explicit connect and read timeouts. Retries are bounded, use backoff, and apply only to idempotent requests.
 - Responses are parsed into domain types at the client. An unexpected shape raises an error; it never falls back to a default.
-- Tests never reach the network, enforced for the whole suite. Clients are tested against recorded real responses, with secrets and personal data scrubbed before they are committed.
+- The test suite never reaches the network, enforced for the whole suite. Clients are tested against recorded real responses, with secrets and personal data scrubbed before they are committed.
+- Checks that run against the real system, such as a container smoke run or a shell project's `verify` script, are separate commands, outside the test suite. They reach only what the check needs, and the change report says which of them ran.
 - Any new external service needs a project spec change. For a service, it also changes the network tier or egress allowlist.
 
 ### Pre-commit and secret scanning
