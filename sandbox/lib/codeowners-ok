@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# INV-9 preflight: succeed only if the CODEOWNERS text on stdin, ignoring
+# comments, blank lines and extra whitespace, is exactly "* @<user>".
+# Usage: codeowners-ok <user> < CODEOWNERS
+set -euo pipefail
+user=$1
+body=$(sed -e 's/#.*//' -e 's/[[:space:]]\{1,\}/ /g' -e 's/^ //' -e 's/ $//' | grep -v '^$' || true)
+[[ $body == "* @$user" ]]

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# gh wrapper (INV-5): sets GH_TOKEN from the task's token file for this one
+# invocation only.
+set -euo pipefail
+token_file=/run/secrets/github_token
+if [[ ! -s $token_file ]]; then
+	echo "gh: $token_file missing or empty" >&2
+	exit 1
+fi
+GH_TOKEN=$(<"$token_file")
+export GH_TOKEN
+exec /opt/gh/bin/gh "$@"

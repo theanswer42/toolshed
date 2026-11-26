@@ -82,9 +82,9 @@ Outcomes and exit codes:
 | INV-4 | The proxy forwards only to domains on the allowlist | T1 | Proxy config | `verify`: an allowlisted host succeeds, another fails |
 | INV-5 | Secrets are never written into an image layer, the task's clone, a commit, or logs | T1 | `Dockerfile`, `task`, git credential config, GitHub push protection | `verify`: image history and clone scanned with betterleaks |
 | INV-6 | The agent runs as a non-root user with no capabilities and `no-new-privileges` | T1 | `Dockerfile`, `compose.yaml` | `verify`: uid and `CapEff` check |
-| INV-7 | A GitHub App private key never enters a task container. A container receives only one installation token, minted for its task's repo alone, with its role's permissions | T1 | `task` | `verify`: no key file in the container; token's repos and permissions match the role |
+| INV-7 | A GitHub App private key never enters a task container. A container receives only one installation token, minted for its task's repo alone, with its role's permissions. Task tokens never carry `workflows`, so a task cannot change CI | T1 | `task`; App permissions (neither App has Workflows) | `verify`: no key file in the container; token's repos and permissions match the role exactly |
 | INV-8 | A reviewer task cannot change repository contents | T1 | Reviewer token: contents read only | `verify`: push with a reviewer token is rejected |
-| INV-9 | No commit reaches the default branch without the user's approval of the PR's latest push | T1 | Repo ruleset (see Repo setup); `task` refuses repos without it | `verify`: push to the default branch is rejected; `task` refuses a repo missing a required rule |
+| INV-9 | No commit reaches the default branch without the user's approval of the PR's latest push | T1 | Repo ruleset (see Repo setup); `task` refuses repos without it, or where the task's App can bypass a ruleset on the default branch | `verify`: push to the default branch is rejected; `task` refuses a repo missing a required rule; `task` refuses a ruleset the App can bypass |
 | INV-10 | Only text written by trusted authors enters the task prompt, and a task refuses a target opened by anyone else | T1 | Task runner | Runner tests with untrusted comments and targets |
 | INV-11 | Every task ends with exactly one outcome, and that outcome is visible on the target | T2 | Task runner wraps the agent and checks GitHub | Runner tests for each outcome and for an agent that exits without one |
 | INV-12 | Only the task runner changes `agent:` labels | T2 | Task runner; agent instructions | Runner tests |
@@ -93,13 +93,15 @@ Outcomes and exit codes:
 | INV-15 | When a task ends without `keep`, its container and volumes are removed | T2 | `task` cleanup trap | `verify`: nothing left after exit |
 | INV-16 | `task` refuses to start if a secret file is missing, empty, or readable by other host users | T2 | `task` | `verify`: start fails for each bad secret |
 | INV-17 | A task container cannot resolve external domain names. Only the proxy resolves names, so DNS queries cannot carry data out | T1 | Network and DNS settings in `compose.yaml` | `verify`: resolving an external name from a task container fails |
-| INV-18 | The agent's user-level Claude Code config comes only from the image, read only. Nothing persists from one task to the next | T1 | `Dockerfile`; no shared writable volumes | `verify`: `~/.claude` config files are read only and match the image; no volume is reused across tasks |
+| INV-18 | The agent's user-level Claude Code config comes only from the image. Settings are enforced through a root-owned managed settings file the agent cannot change. The other config files are copied from the image into a fresh `~/.claude` on tmpfs at start. Nothing persists from one task to the next | T1 | `Dockerfile`; entry point; tmpfs home; no shared writable volumes | `verify`: managed settings are root-owned, not writable, and match `claude/settings.json`; `~/.claude` files match the image; no volume is reused across tasks |
 | INV-19 | The sandbox holds nothing private except the task's tokens. Everything else a task can see, including sample data, is treated as public | T1 | User sanitizes sample data before passing it; `task` copies only the directory named by `--data` | Process rule, owned by the user; not mechanically checked |
 
 Notes:
 
 - INV-9 relies on rulesets, which are free for public repos. Target repos are assumed to be public. A private repo on a plan without rulesets is refused by `task`, so INV-9 holds for every repo the sandbox runs on.
 - After the user approves, the implementer token could technically merge the PR. That is accepted: it can only merge what the user approved, because a new push dismisses the approval.
+- The user is a bypass actor (Repository admin role, pull requests only), so they can merge their own PRs. GitHub never counts an approval from a PR's author or last pusher. The bypass also lets the user merge any PR, including an agent's, without approving it. For agent PRs, approving before merging is a discipline the user holds to, not a rule GitHub enforces.
+- Without the Workflows permission, GitHub rejects any App push that creates or changes a file under `.github/workflows/`. The cost: a task that needs a workflow change describes it in its PR, and the user commits it in their own PR.
 - INV-10 is enforced on what the runner puts in the prompt. The agent could still fetch untrusted text itself with `gh`; its instructions forbid that, and a reviewer checks for it. It is not fully mechanical.
 
 ## Risk tiers
@@ -127,7 +129,7 @@ Some tasks need example inputs, such as CSV exports for an ingest tool.
 
 ## Agent configuration
 
-- **User-level config** lives in this repo under `sandbox/claude/`: `CLAUDE.md`, `skills/`, `agents/`, and `settings.json`. The dev image copies it into the agent's `~/.claude`, read only. Changes go through PRs: `settings.json` and any hooks are T1, because they control permissions and run code; instruction files and skills are T2.
+- **User-level config** lives in this repo under `sandbox/claude/`: `CLAUDE.md`, `skills/`, `agents/`, and `settings.json`. `settings.json` becomes the root-owned managed settings file; the rest is copied into a fresh tmpfs `~/.claude` at start (INV-18). Changes go through PRs: `settings.json` and any hooks are T1, because they control permissions and run code; instruction files and skills are T2.
 - **The host's `~/.claude` is never mounted or copied.** It holds credentials, transcripts from other projects, and hooks and plugins that run code.
 - **Project config** comes with the clone: the repo's own `CLAUDE.md` and `.claude/` directory.
 - **Automatic memory is off** in tasks. Anything worth keeping goes into the repo through a PR: the scratchpad, `CLAUDE.md`, or a project spec proposal.
@@ -137,7 +139,7 @@ Some tasks need example inputs, such as CSV exports for an ingest tool.
 
 Each target repo is prepared once by the user. `task` checks the ruleset before every task, through the public rules endpoint, and refuses the repo if a rule is missing.
 
-- **Ruleset on the default branch**, with no bypass list:
+- **Ruleset on the default branch**, whose only bypass actor is the Repository admin role, in pull-requests-only mode. `task` checks with the task's own token that the App cannot bypass it. A copy is in `github/ta_default_ruleset.json`:
   - Require a pull request before merging, with one approval.
   - Require review from code owners. `CODEOWNERS` contains only `* @<user>`, so only the user's approval counts. An approval from the reviewer App does not.
   - Dismiss stale approvals when new commits are pushed, and require approval of the most recent push.
@@ -145,7 +147,7 @@ Each target repo is prepared once by the user. `task` checks the ruleset before 
 - **`CODEOWNERS`** at `.github/CODEOWNERS`. Changes to it need the user's approval like any other file.
 - **GitHub secret scanning and push protection** turned on. Both are free for public repos and back up INV-5: a secret the agent tries to push is blocked by GitHub as well as by betterleaks.
 - **Labels** `agent:working`, `agent:needs-input`, `agent:review-ready`, and `agent:reviewed` exist. `task` creates any that are missing.
-- **Both Apps installed** on the repo.
+- **Both Apps installed** on the repo. The implementer has contents, pull requests and issues read and write. The reviewer has contents read only, and pull requests and issues read and write. Both have metadata read and neither has Workflows.
 
 ## Reference models
 
@@ -159,6 +161,8 @@ None. Correctness is about isolation and GitHub side effects, which `verify` and
   - GitHub: `github.com`, `api.github.com`, `codeload.github.com`, `objects.githubusercontent.com`
   - Python: `pypi.org`, `files.pythonhosted.org`
   - Go: `proxy.golang.org`, `sum.golang.org`
+  - GitHub release downloads: `release-assets.githubusercontent.com`, for tools such as pre-commit hooks that fetch release binaries. Uploads go to `uploads.github.com`, which is not allowed.
+  - Deliberately excluded: `storage.googleapis.com`. `proxy.golang.org` redirects some module downloads there, but allowing it would allow every Cloud Storage bucket, including writable ones. Those Go builds fail closed.
 - **Claude Code settings in the image**, so it needs only the Anthropic hosts above:
   - `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`: turns off optional telemetry and error reporting.
   - `DISABLE_AUTOUPDATER=1`: the version is pinned in the image and changes only with the image.
@@ -226,3 +230,4 @@ Decided:
 
 | Date | Change | Approved by |
 | --- | --- | --- |
+| 2026-11-25 | Stage 1 (#3, PR #6): INV-18 reworded for managed settings and a tmpfs `~/.claude`; INV-7 adds that task tokens never carry `workflows`; INV-9 and Repo setup allow only the admin role's pull-requests-only bypass, checked by `task`; allowlist adds `release-assets.githubusercontent.com` and records `storage.googleapis.com` as excluded; Repo setup lists the App permissions | @theanswer42, by approving PR #6 |

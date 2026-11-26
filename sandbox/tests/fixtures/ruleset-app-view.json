@@ -1,0 +1,8 @@
+{
+  "id": 27917403,
+  "name": "ta-default",
+  "target": "branch",
+  "enforcement": "active",
+  "bypass_actors": null,
+  "current_user_can_bypass": "never"
+}

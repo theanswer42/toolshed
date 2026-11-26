@@ -1,0 +1,62 @@
+# Sandbox checks (principle 10). Changes to this file are T1.
+name: sandbox
+
+on:
+  pull_request:
+    paths:
+      - "sandbox/**"
+      - ".pre-commit-config.yaml"
+      - ".betterleaks.toml"
+      - ".github/workflows/sandbox.yml"
+  push:
+    branches: [main]
+    paths:
+      - "sandbox/**"
+      - ".pre-commit-config.yaml"
+      - ".betterleaks.toml"
+      - ".github/workflows/sandbox.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+      - name: Install betterleaks (pinned, checksummed)
+        run: |
+          curl -fsSL -o /tmp/bl.tgz https://github.com/betterleaks/betterleaks/releases/download/v1.10.1/betterleaks_1.10.1_linux_x64.tar.gz
+          echo "c174b42d7aa60caf58c0c3e555c0e4bed01fe6b0d99a412bce777b5af4ce913e  /tmp/bl.tgz" | sha256sum -c
+          mkdir -p "$HOME/.local/bin" && tar -C "$HOME/.local/bin" -xzf /tmp/bl.tgz betterleaks
+          echo "$HOME/.local/bin" >>"$GITHUB_PATH"
+      - name: pre-commit (shellcheck, shfmt, betterleaks on the tree)
+        run: uvx pre-commit@4.7.0 run --all-files --show-diff-on-failure
+      - name: betterleaks on every commit in the PR
+        if: github.event_name == 'pull_request'
+        run: |
+          docker run --rm --network none -v "$PWD:/repo:ro" \
+            ghcr.io/betterleaks/betterleaks:v1.10.1@sha256:f345c1ac502abc51ec334c3d815ad18a79fb1509555fc4496b2cb88e760681b3 git --no-banner --redact \
+            --config /repo/.betterleaks.toml \
+            --log-opts="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}" /repo
+
+  verify-offline:
+    runs-on: ubuntu-24.04
+    env:
+      # Runners are smaller than the defaults in compose.yaml.
+      SANDBOX_CPUS: "2"
+      SANDBOX_MEMORY: 4g
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Runtime directory for task state
+        run: |
+          d=$(mktemp -d)
+          chmod 0700 "$d"
+          echo "XDG_RUNTIME_DIR=$d" >>"$GITHUB_ENV"
+      - name: Build images
+        run: docker compose -f sandbox/compose.yaml --profile task build
+      - name: verify (offline checks; no secrets)
+        run: sandbox/verify

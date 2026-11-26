@@ -1,0 +1,744 @@
+#!/usr/bin/env bash
+# verify: check the sandbox's stage 1 invariants against real containers.
+#
+#   verify                    offline checks: no secrets needed (CI runs these)
+#   verify --online <repo>    also the checks that need real tokens, using
+#                             `task` and your config, against <owner/repo>
+#
+# Each check prints PASS or FAIL with its invariant ID. The exit status is the
+# number of failures (0 means everything passed).
+#
+# SANDBOX_COMPOSE_FILE and SANDBOX_TASK point verify at a modified compose
+# file or task script, to show a check fails when its protection is removed.
+# SC2329: check functions are called through `check`.
+# SC2016: command strings are expanded inside the container, on purpose.
+# shellcheck disable=SC2329,SC2016
+set -uo pipefail
+
+SANDBOX_DIR=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)
+COMPOSE_FILE=${SANDBOX_COMPOSE_FILE:-$SANDBOX_DIR/compose.yaml}
+TASK=${SANDBOX_TASK:-$SANDBOX_DIR/task}
+images=$(docker compose -f "$COMPOSE_FILE" --profile task config --format json 2>/dev/null | jq -r '.services.task.image, .services.egress.image') ||
+	{
+		echo "verify: could not read $COMPOSE_FILE" >&2
+		exit 64
+	}
+{
+	read -r DEV_IMAGE
+	read -r EGRESS_IMAGE
+} <<<"$images"
+ALLOWED_HOST=api.github.com
+DENIED_HOST=example.com
+
+online_repo=
+while (($#)); do
+	case $1 in
+	--online)
+		online_repo=${2:?--online needs <owner/repo>}
+		shift 2
+		;;
+	-h | --help)
+		sed -n '2,13p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+		exit 0
+		;;
+	*)
+		echo "verify: unknown argument: $1" >&2
+		exit 64
+		;;
+	esac
+done
+
+failures=0
+pass() { printf 'PASS  %-7s %s\n' "$1" "$2"; }
+fail() {
+	printf 'FAIL  %-7s %s\n' "$1" "$2"
+	[[ -n ${3:-} ]] && printf '      %s\n' "$3"
+	failures=$((failures + 1))
+}
+# check ID DESCRIPTION COMMAND...: PASS if COMMAND succeeds. Its output is
+# shown on failure.
+check() {
+	local id=$1 desc=$2 out
+	shift 2
+	if out=$("$@" 2>&1); then pass "$id" "$desc"; else fail "$id" "$desc" "${out//$'\n'/$'\n      '}"; fi
+}
+
+run_id=$(date -u +%H%M%S)-$$
+work=$(mktemp -d "${XDG_RUNTIME_DIR:-/tmp}/sandbox-verify.XXXXXX")
+chmod 0700 "$work"
+projects=()
+
+cleanup() {
+	local p
+	for p in "${projects[@]}"; do
+		docker rm -f "$p" >/dev/null 2>&1
+		docker volume rm "${p}_work" "${p}_cache" >/dev/null 2>&1
+	done
+	rm -rf "$work"
+}
+trap cleanup EXIT
+
+# --- setup: the proxy and two task containers with dummy secrets ------------
+
+echo dummy-github-token >"$work/github_token"
+echo dummy-claude-token >"$work/claude_token"
+chmod 0444 "$work/github_token" "$work/claude_token"
+export SANDBOX_GITHUB_TOKEN_FILE=$work/github_token SANDBOX_CLAUDE_TOKEN_FILE=$work/claude_token
+export SANDBOX_REPO='' SANDBOX_GIT_NAME='' SANDBOX_GIT_EMAIL=''
+
+if ! docker compose -p sandbox-egress -f "$COMPOSE_FILE" up -d --wait egress >"$work/egress.log" 2>&1; then
+	cat "$work/egress.log" >&2
+	echo "verify: could not start the egress proxy" >&2
+	exit 1
+fi
+
+start_task() {
+	local p=$1
+	projects+=("$p")
+	docker compose -p "$p" -f "$COMPOSE_FILE" --profile task run -d -T --name "$p" task sleep infinity \
+		>"$work/$p.log" 2>&1 || {
+		cat "$work/$p.log" >&2
+		echo "verify: could not start task container $p" >&2
+		exit 1
+	}
+	# Wait for the entrypoint to finish setting up ~/.claude.
+	for _ in $(seq 50); do
+		docker exec "$p" test -e /home/agent/.claude.json 2>/dev/null && return 0
+		sleep 0.2
+	done
+	docker logs "$p" >&2
+	echo "verify: task container $p did not start" >&2
+	exit 1
+}
+
+A=sandbox-verify-$run_id-a
+B=sandbox-verify-$run_id-b
+start_task "$A"
+start_task "$B"
+in_a() { docker exec "$A" bash -c "$1"; }
+in_b() { docker exec "$B" bash -c "$1"; }
+
+echo "Offline checks"
+
+# --- INV-1: only the two token files, read-only, plus the task's own volumes --
+
+inv1_mounts() {
+	local bad
+	bad=$(docker inspect "$A" --format '{{json .Mounts}}' | jq -r --arg p "$A" --arg dir "$work" '
+		.[] | select(
+			(.Type == "volume" and (.Name | startswith($p + "_")) and (.Destination == "/work" or .Destination == "/cache")) or
+			(.Type == "bind" and .RW == false and (.Source | startswith($dir + "/")) and
+				(.Destination == "/run/secrets/github_token" or .Destination == "/run/secrets/claude_token"))
+			| not) | "\(.Type) \(.Source) -> \(.Destination) rw=\(.RW)"')
+	[[ -z $bad ]] || {
+		echo "unexpected mounts: $bad"
+		return 1
+	}
+	local tmpfs
+	tmpfs=$(docker inspect "$A" --format '{{json .HostConfig.Tmpfs}}' | jq -r 'keys - ["/tmp", "/home/agent"] | join(" ")')
+	[[ -z $tmpfs ]] || {
+		echo "unexpected tmpfs: $tmpfs"
+		return 1
+	}
+}
+check INV-1 "only the token files (read-only) and task volumes are mounted" inv1_mounts
+
+# --- INV-2: no Docker socket ------------------------------------------------
+
+inv2_socket() {
+	docker inspect "$A" --format '{{json .Mounts}}' | jq -e 'all(.[]; (.Source | test("docker\\.sock")) | not)' >/dev/null ||
+		{
+			echo "a docker.sock is mounted"
+			return 1
+		}
+	in_a 'test -z "${DOCKER_HOST:-}" || { echo "DOCKER_HOST is set"; exit 1; }
+		s=$(find / \( -path /proc -o -path /sys \) -prune -o -type s -print 2>/dev/null)
+		test -z "$s" || { echo "sockets found: $s"; exit 1; }'
+}
+check INV-2 "no Docker socket is mounted or reachable" inv2_socket
+
+# --- INV-3: no route out except the proxy -----------------------------------
+
+inv3_direct() {
+	local ip
+	for ip in 1.1.1.1 140.82.112.3; do
+		if in_a "curl -sS --noproxy '*' --max-time 5 -o /dev/null https://$ip" >/dev/null 2>&1; then
+			echo "direct connection to $ip succeeded"
+			return 1
+		fi
+	done
+	docker inspect "$A" --format '{{json .NetworkSettings.Networks}}' | jq -e 'keys == ["sandbox-internal"]' >/dev/null ||
+		{
+			echo "task container is on other networks"
+			return 1
+		}
+	docker network inspect sandbox-internal --format '{{.Internal}}' | grep -qx true ||
+		{
+			echo "sandbox-internal is not internal"
+			return 1
+		}
+}
+check INV-3 "direct connections to the internet fail" inv3_direct
+
+# --- INV-4: the proxy contract ----------------------------------------------
+
+inv4_allowed() {
+	local code
+	code=$(in_a "curl -sS --max-time 15 -o /dev/null -w '%{http_code}' https://$ALLOWED_HOST/")
+	[[ $code =~ ^[23] ]] || {
+		echo "https://$ALLOWED_HOST returned $code"
+		return 1
+	}
+}
+inv4_denied() {
+	local url
+	for url in "https://$DENIED_HOST/" "http://$ALLOWED_HOST/" "https://140.82.112.3/" "https://$ALLOWED_HOST:8443/"; do
+		if in_a "curl -fsSk --max-time 10 -o /dev/null $url" >/dev/null 2>&1; then
+			echo "$url succeeded through the proxy"
+			return 1
+		fi
+	done
+}
+inv4_logged() {
+	local logs
+	logs=$(docker logs --since 5m sandbox-egress-egress-1 2>/dev/null)
+	grep -q "DENIED.*$DENIED_HOST" <<<"$logs" || {
+		echo "no denial logged for $DENIED_HOST"
+		return 1
+	}
+	grep -q "TUNNEL.*$ALLOWED_HOST" <<<"$logs" || {
+		echo "no allowed request logged for $ALLOWED_HOST"
+		return 1
+	}
+}
+inv4_render() {
+	local bad
+	for bad in '*' '.' 'github.com/foo' 'a b.com' 'Example.com'; do
+		printf '%s\n' "$bad" >"$work/allowlist.txt"
+		if "$SANDBOX_DIR/egress/render-squid.sh" "$work/allowlist.txt" "$work/out" 2>/dev/null; then
+			echo "renderer accepted '$bad'"
+			return 1
+		fi
+	done
+}
+check INV-4 "an allowlisted host succeeds through the proxy" inv4_allowed
+check INV-4 "other hosts, plain HTTP, bare IPs and other ports are denied" inv4_denied
+check INV-4 "the proxy logs allowed and denied requests with the domain" inv4_logged
+check INV-4 "the allowlist renderer rejects entries that are not domains" inv4_render
+
+# --- INV-5: no secrets in image layers or build history ---------------------
+
+inv5_image() {
+	local scan=$work/image-scan img c
+	mkdir -p "$scan"
+	for img in "$DEV_IMAGE" "$EGRESS_IMAGE"; do
+		docker history --no-trunc --format '{{.CreatedBy}}' "$img" >"$scan/${img//[:\/]/_}.history" || return 1
+	done
+	# Files our Dockerfiles add on top of the pinned base images.
+	c=$(docker create "$DEV_IMAGE") || return 1
+	for p in /etc/claude-code /etc/sandbox /etc/gitconfig /usr/local/bin/entrypoint /usr/local/bin/gh \
+		/usr/local/bin/git-credential-sandbox; do
+		mkdir -p "$scan/dev$(dirname "$p")"
+		docker cp -q "$c:$p" "$scan/dev$p" || {
+			docker rm "$c" >/dev/null
+			return 1
+		}
+	done
+	docker rm "$c" >/dev/null
+	c=$(docker create "$EGRESS_IMAGE") || return 1
+	docker cp -q "$c:/etc/squid" "$scan/egress-squid" || return 1
+	docker rm "$c" >/dev/null
+	docker run --rm --network none -v "$scan:/scan:ro" -v "$SANDBOX_DIR/../.betterleaks.toml:/config.toml:ro" \
+		--entrypoint betterleaks "$DEV_IMAGE" dir --no-banner --no-color --redact -c /config.toml /scan
+}
+inv5_gitconfig() {
+	in_a 'git config --system --get-all credential.https://github.com.helper | tail -1 | grep -qx /usr/local/bin/git-credential-sandbox' ||
+		{
+			echo "git credential helper is not configured"
+			return 1
+		}
+}
+check INV-5 "betterleaks finds nothing in our image layers or build history" inv5_image
+check INV-5 "git reads the token through the credential helper" inv5_gitconfig
+
+# --- INV-6: non-root, no capabilities, no-new-privileges --------------------
+
+inv6_privileges() {
+	local c
+	for c in "$A" sandbox-egress-egress-1; do
+		docker exec "$c" sh -c '
+			[ "$(id -u)" != 0 ] || { echo "runs as root"; exit 1; }
+			grep -q "^CapEff:[[:space:]]*0000000000000000$" /proc/self/status || { grep ^Cap /proc/self/status; exit 1; }
+			grep -q "^CapBnd:[[:space:]]*0000000000000000$" /proc/self/status || { echo "bounding set not empty"; exit 1; }
+			grep -q "^NoNewPrivs:[[:space:]]*1$" /proc/self/status || { echo "no-new-privileges not set"; exit 1; }' ||
+			{
+				echo "in $c"
+				return 1
+			}
+		docker inspect "$c" --format '{{.HostConfig.ReadonlyRootfs}}' | grep -qx true ||
+			{
+				echo "$c: root filesystem is writable"
+				return 1
+			}
+	done
+}
+check INV-6 "task and proxy run non-root, with no capabilities and no-new-privileges" inv6_privileges
+
+# --- INV-7: the container holds tokens, never an App key --------------------
+
+inv7_offline() {
+	in_a 'ls /run/secrets | sort | tr "\n" " "' | grep -qx 'claude_token github_token ' ||
+		{
+			echo "/run/secrets holds: $(in_a 'ls /run/secrets')"
+			return 1
+		}
+}
+check INV-7 "/run/secrets holds only github_token and claude_token" inv7_offline
+
+# --- INV-9: preflight logic, against recorded rule responses ----------------
+
+inv9_rules() {
+	local fixture=$SANDBOX_DIR/tests/fixtures/rules-complete.json out rule field
+	out=$(jq -r -f "$SANDBOX_DIR/lib/missing-rules.jq" "$fixture")
+	[[ -z $out ]] || {
+		echo "complete ruleset reported missing: $out"
+		return 1
+	}
+	for rule in deletion non_fast_forward pull_request; do
+		out=$(jq --arg t "$rule" 'map(select(.type != $t))' "$fixture" | jq -r -f "$SANDBOX_DIR/lib/missing-rules.jq")
+		[[ -n $out ]] || {
+			echo "ruleset without $rule accepted"
+			return 1
+		}
+	done
+	for field in require_code_owner_review dismiss_stale_reviews_on_push require_last_push_approval; do
+		out=$(jq --arg f "$field" 'map(if .type == "pull_request" then .parameters[$f] = false else . end)' "$fixture" |
+			jq -r -f "$SANDBOX_DIR/lib/missing-rules.jq")
+		[[ -n $out ]] || {
+			echo "ruleset with $field=false accepted"
+			return 1
+		}
+	done
+	out=$(jq 'map(if .type == "pull_request" then .parameters.required_approving_review_count = 0 else . end)' "$fixture" |
+		jq -r -f "$SANDBOX_DIR/lib/missing-rules.jq")
+	[[ -n $out ]] || {
+		echo "ruleset with 0 required approvals accepted"
+		return 1
+	}
+}
+inv9_codeowners() {
+	local ok=$SANDBOX_DIR/lib/codeowners-ok
+	"$ok" alice <<<'* @alice' || {
+		echo "rejected '* @alice'"
+		return 1
+	}
+	"$ok" alice <<<$'# owners\n\n*   @alice  # me\n' || {
+		echo "rejected comments and spacing"
+		return 1
+	}
+	local bad
+	for bad in '* @bob' $'* @alice\n/x @bob' '* @alice @bob' '' '/src @alice' '* @alice-x'; do
+		if "$ok" alice <<<"$bad"; then
+			echo "accepted: ${bad//$'\n'/\\n}"
+			return 1
+		fi
+	done
+}
+inv9_bypass() {
+	local fixture=$SANDBOX_DIR/tests/fixtures/ruleset-app-view.json mode
+	jq -e -f "$SANDBOX_DIR/lib/bypass-ok.jq" "$fixture" >/dev/null || {
+		echo "rejected a ruleset the App cannot bypass"
+		return 1
+	}
+	for mode in always pull_requests_only exempt null; do
+		if jq --argjson m "$([[ $mode == null ]] && echo null || echo "\"$mode\"")" '.current_user_can_bypass = $m' "$fixture" |
+			jq -e -f "$SANDBOX_DIR/lib/bypass-ok.jq" >/dev/null; then
+			echo "accepted current_user_can_bypass=$mode"
+			return 1
+		fi
+	done
+	if jq 'del(.current_user_can_bypass)' "$fixture" | jq -e -f "$SANDBOX_DIR/lib/bypass-ok.jq" >/dev/null; then
+		echo "accepted a ruleset without current_user_can_bypass"
+		return 1
+	fi
+}
+check INV-9 "preflight refuses a ruleset missing any required rule" inv9_rules
+check INV-9 "preflight refuses a ruleset the task's App can bypass" inv9_bypass
+check INV-9 "preflight accepts only CODEOWNERS '* @<user>'" inv9_codeowners
+
+# --- INV-13: separate volumes per task --------------------------------------
+
+inv13_separate() {
+	in_a "echo $run_id >/work/marker-a && echo $run_id >/cache/marker-a" || return 1
+	if in_b 'test -e /work/marker-a || test -e /cache/marker-a'; then
+		echo "task B sees task A's files"
+		return 1
+	fi
+	local va vb
+	va=$(docker inspect "$A" --format '{{range .Mounts}}{{.Name}} {{end}}')
+	vb=$(docker inspect "$B" --format '{{range .Mounts}}{{.Name}} {{end}}')
+	for v in $va; do
+		[[ " $vb " != *" $v "* ]] || {
+			echo "volume $v is shared"
+			return 1
+		}
+	done
+}
+check INV-13 "two tasks see separate volumes" inv13_separate
+
+# --- INV-14: limits ---------------------------------------------------------
+
+inv14_limits() {
+	local cpus mem pids
+	read -r cpus mem pids < <(docker inspect "$A" --format '{{.HostConfig.NanoCpus}} {{.HostConfig.Memory}} {{.HostConfig.PidsLimit}}')
+	for v in "$cpus" "$mem" "$pids"; do
+		[[ $v =~ ^[1-9][0-9]*$ ]] || {
+			echo "limits missing: cpus=$cpus memory=$mem pids=$pids"
+			return 1
+		}
+	done
+	# The cgroup enforces exactly the configured limits, not ones inherited
+	# from the host (such as a systemd TasksMax).
+	in_a "[ \"\$(cat /sys/fs/cgroup/pids.max)\" = $pids ] || { echo \"pids.max is \$(cat /sys/fs/cgroup/pids.max), want $pids\"; exit 1; }
+		[ \"\$(cat /sys/fs/cgroup/memory.max)\" = $mem ] || { echo \"memory.max is \$(cat /sys/fs/cgroup/memory.max), want $mem\"; exit 1; }
+		[ \"\$(cut -d' ' -f1 /sys/fs/cgroup/cpu.max)\" = $((cpus / 10000)) ] || { echo \"cpu.max is \$(cat /sys/fs/cgroup/cpu.max), want $((cpus / 10000)) 100000\"; exit 1; }"
+}
+check INV-14 "CPU, memory and PID limits are set and enforced by the cgroup" inv14_limits
+
+# --- INV-16: task refuses bad secret files ----------------------------------
+
+inv16_secrets() {
+	local cfg=$work/inv16 out case
+	mkdir -p "$cfg/secrets"
+	chmod 0700 "$cfg" "$cfg/secrets"
+	openssl genrsa -out "$cfg/secrets/implementer_app_key" 2048 2>/dev/null
+	echo not-a-real-token >"$cfg/secrets/claude_token"
+	printf 'IMPLEMENTER_APP_ID=1\nREVIEWER_APP_ID=2\nGITHUB_USER=nobody\nSECRETS_DIR=%s\n' "$cfg/secrets" >"$cfg/config"
+	chmod 0600 "$cfg/config" "$cfg/secrets/"*
+
+	run_task() { SANDBOX_CONFIG=$cfg/config "$TASK" nobody/none --role implementer </dev/null 2>&1; }
+
+	# Control: good files get past the secret checks and fail later, at GitHub.
+	out=$(run_task)
+	if [[ $? != 64 || $out != *"could not authenticate"* ]]; then
+		echo "control case did not get past the secret checks to GitHub: $out"
+		return 1
+	fi
+
+	for case in missing empty group-readable other-readable symlink config-readable; do
+		cp -p "$cfg/secrets/claude_token" "$cfg/claude_token.bak"
+		cp -p "$cfg/config" "$cfg/config.bak"
+		case $case in
+		missing) rm "$cfg/secrets/claude_token" ;;
+		empty) : >"$cfg/secrets/claude_token" ;;
+		group-readable) chmod 0640 "$cfg/secrets/claude_token" ;;
+		other-readable) chmod 0604 "$cfg/secrets/claude_token" ;;
+		symlink)
+			rm "$cfg/secrets/claude_token"
+			ln -s "$cfg/claude_token.bak" "$cfg/secrets/claude_token"
+			;;
+		config-readable) chmod 0644 "$cfg/config" ;;
+		esac
+		out=$(run_task)
+		local status=$?
+		rm -f "$cfg/secrets/claude_token"
+		mv "$cfg/claude_token.bak" "$cfg/secrets/claude_token"
+		mv "$cfg/config.bak" "$cfg/config"
+		if [[ $status != 64 || $out != *"$cfg"* ]]; then
+			echo "$case: task did not refuse (exit $status): $out"
+			return 1
+		fi
+	done
+}
+check INV-16 "task refuses missing, empty, shared or symlinked secret files" inv16_secrets
+
+# --- INV-17: no name resolution ---------------------------------------------
+
+inv17_dns() {
+	local name
+	for name in "$DENIED_HOST" "$ALLOWED_HOST"; do
+		if in_a "getent hosts $name"; then
+			echo "resolved $name"
+			return 1
+		fi
+		if in_a "python3 -c 'import socket; socket.getaddrinfo(\"$name\", 443)'" 2>/dev/null; then
+			echo "python resolved $name"
+			return 1
+		fi
+	done
+}
+check INV-17 "a task container cannot resolve external names" inv17_dns
+
+# --- INV-18: config from the image, nothing carried over --------------------
+
+inv18_config() {
+	in_a 'cd /etc/sandbox/claude && find . -type f | while read -r f; do cmp -s "$f" "$HOME/.claude/$f" || { echo "~/.claude/$f differs from the image"; exit 1; }; done' ||
+		return 1
+	in_a 'f=/etc/claude-code/managed-settings.json
+		[ "$(stat -c %u "$f")" = 0 ] || { echo "$f not owned by root"; exit 1; }
+		[ ! -w "$f" ] && [ ! -w "$(dirname "$f")" ] || { echo "$f is writable by the agent"; exit 1; }' || return 1
+	in_a 'cat /etc/claude-code/managed-settings.json' | cmp -s - "$SANDBOX_DIR/claude/settings.json" ||
+		{
+			echo "managed settings differ from sandbox/claude/settings.json"
+			return 1
+		}
+	in_a 'awk "\$2 == \"/home/agent\" { print \$3 }" /proc/mounts' | grep -qx tmpfs ||
+		{
+			echo "/home/agent is not a tmpfs"
+			return 1
+		}
+	in_a 'echo x >"$HOME/.claude/marker"' || return 1
+	if in_b 'test -e "$HOME/.claude/marker"'; then
+		echo "task B sees task A's ~/.claude"
+		return 1
+	fi
+	docker image inspect "$DEV_IMAGE" --format '{{json .Config.Volumes}}' | grep -qx null ||
+		{
+			echo "the image declares VOLUMEs"
+			return 1
+		}
+}
+check INV-18 "\$HOME/.claude comes from the image; managed settings are root-owned" inv18_config
+
+# --- interface docs --------------------------------------------------------
+
+docs_current() {
+	local tmp=$work/docs
+	mkdir -p "$tmp/docs"
+	cp -a "$SANDBOX_DIR/task" "$SANDBOX_DIR/docs/generate-cli" "$tmp/"
+	cp "$SANDBOX_DIR/docs/generate-cli" "$tmp/docs/"
+	"$tmp/docs/generate-cli" && diff -u "$SANDBOX_DIR/docs/cli.md" "$tmp/docs/cli.md"
+}
+check docs "docs/cli.md matches task --help" docs_current
+
+# --- online checks ----------------------------------------------------------
+
+if [[ -z $online_repo ]]; then
+	echo
+	((failures)) && echo "$failures check(s) failed" || echo "All offline checks passed"
+	exit "$failures"
+fi
+
+echo
+echo "Online checks against $online_repo"
+
+# task_script ROLE SCRIPT [--keep]: run `task` with SCRIPT on stdin. Leaves
+# stdout+stderr in $work/out and the project name in $project.
+task_script() {
+	local role=$1 script=$2
+	shift 2
+	"$TASK" "$online_repo" --role "$role" "$@" <<<"$script" >"$work/out" 2>&1
+	task_status=$?
+	project=$(sed -n 's/^task: \(sandbox-task-[0-9a-f-]*\): .*/\1/p' "$work/out" | head -1)
+}
+
+# Hashes of the App keys' DER bodies, never the keys themselves.
+key_hashes() {
+	local k
+	for k in "$@"; do
+		grep -v -- '-----' "$k" | tr -d '\n' | base64 -d | sha256sum | cut -d' ' -f1
+	done
+}
+SECRETS_DIR=$(sed -n 's/^SECRETS_DIR=//p' "${SANDBOX_CONFIG:-$HOME/.config/sandbox/config}")
+SECRETS_DIR=${SECRETS_DIR:-$HOME/.config/sandbox/secrets}
+hashes=$(key_hashes "$SECRETS_DIR/implementer_app_key" "$SECRETS_DIR/reviewer_app_key" | tr '\n' ' ')
+
+# Runs inside the container: print sha256 of the DER body of every PEM private
+# key file outside /proc and /sys.
+find_keys='python3 - <<"PY"
+import base64, hashlib, os, re
+pem = re.compile(rb"-----BEGIN [A-Z ]*PRIVATE KEY-----\s*(.*?)\s*-----END", re.S)
+for top in ["/"]:
+    for root, dirs, files in os.walk(top):
+        if root in ("/proc", "/sys", "/dev"):
+            dirs[:] = []
+            continue
+        for f in files:
+            p = os.path.join(root, f)
+            try:
+                if os.path.islink(p) or os.path.getsize(p) > 1 << 20:
+                    continue
+                data = open(p, "rb").read()
+            except OSError:
+                continue
+            for m in pem.finditer(data):
+                try:
+                    print(hashlib.sha256(base64.b64decode(m.group(1))).hexdigest())
+                except Exception:
+                    pass
+PY'
+
+for role in implementer reviewer; do
+	if [[ $role == implementer ]]; then
+		want='{"contents":"write","issues":"write","metadata":"read","pull_requests":"write"}'
+	else
+		want='{"contents":"read","issues":"write","metadata":"read","pull_requests":"write"}'
+	fi
+	branch=verify-$role-$run_id
+	task_script "$role" "
+set -u
+echo \"@@repos \$(gh api /installation/repositories --jq '[.repositories[].full_name] | join(\",\")')\"
+echo \"@@identity \$(git config user.name) <\$(git config user.email)>\"
+echo '@@keys-begin'
+$find_keys
+echo '@@keys-end'
+echo \"@@token-in-clone \$(grep -rlF -f /run/secrets/github_token /work 2>/dev/null | wc -l)\"
+echo \"@@claude-in-clone \$(grep -rlF -f /run/secrets/claude_token /work 2>/dev/null | wc -l)\"
+cat >/tmp/betterleaks.toml <<'BETTERLEAKS_CONFIG'
+$(<"$SANDBOX_DIR/../.betterleaks.toml")
+BETTERLEAKS_CONFIG
+betterleaks git --no-banner --no-color --redact -c /tmp/betterleaks.toml /work >/dev/null 2>&1; echo \"@@betterleaks-clone \$?\"
+git commit -q --allow-empty -m 'verify: this push must be rejected' >/dev/null 2>&1
+if git push -q origin HEAD:refs/heads/$branch >/dev/null 2>&1; then echo '@@push-branch ok'; git push -q origin --delete $branch >/dev/null 2>&1; else echo '@@push-branch rejected'; fi
+if [ $role = implementer ]; then
+  if git push -q origin HEAD:\$(git rev-parse --abbrev-ref origin/HEAD | cut -d/ -f2) >/dev/null 2>&1; then echo '@@push-default ok'; else echo '@@push-default rejected'; fi
+fi
+"
+	out=$(<"$work/out")
+	marker() { sed -n "s/^@@$1 //p" <<<"$out" | head -1; }
+
+	if [[ $task_status != 0 || -z $project ]]; then
+		fail INV-7 "$role: task started" "exit $task_status: $(tail -5 <<<"$out")"
+		continue
+	fi
+	scope=$(sed -n 's/^task: token scope: //p' <<<"$out")
+	if jq -e --arg r "$online_repo" --argjson p "$want" '.repositories == [$r] and .permissions == $p' <<<"$scope" >/dev/null 2>&1; then
+		pass INV-7 "$role: token is for $online_repo alone, with the $role permissions"
+	else
+		fail INV-7 "$role: token is for $online_repo alone, with the $role permissions" "scope: $scope"
+	fi
+	if [[ $(marker repos) == "$online_repo" ]]; then
+		pass INV-7 "$role: the token reaches only $online_repo"
+	else
+		fail INV-7 "$role: the token reaches only $online_repo" "reaches: $(marker repos)"
+	fi
+	found=$(sed -n '/^@@keys-begin$/,/^@@keys-end$/p' <<<"$out" | grep -E '^[0-9a-f]{64}$' || true)
+	leaked=0
+	for h in $found; do [[ " $hashes " == *" $h "* ]] && leaked=1; done
+	if ((leaked)); then
+		fail INV-7 "$role: no App private key inside the container"
+	else
+		pass INV-7 "$role: no App private key inside the container"
+	fi
+	if [[ $(marker token-in-clone) == 0 && $(marker claude-in-clone) == 0 && $(marker betterleaks-clone) == 0 ]]; then
+		pass INV-5 "$role: no secret in the clone (exact match and betterleaks)"
+	else
+		fail INV-5 "$role: no secret in the clone" "github token files: $(marker token-in-clone), claude token files: $(marker claude-in-clone), betterleaks exit: $(marker betterleaks-clone)"
+	fi
+	if [[ $role == reviewer ]]; then
+		if [[ $(marker push-branch) == rejected ]]; then
+			pass INV-8 "reviewer: pushing a branch is rejected"
+		else
+			fail INV-8 "reviewer: pushing a branch is rejected" "push: $(marker push-branch)"
+		fi
+	else
+		if [[ $(marker push-branch) == ok ]]; then
+			pass INV-7 "implementer: can push a branch (control for INV-8 and INV-9)"
+		else
+			fail INV-7 "implementer: can push a branch (control for INV-8 and INV-9)" "push: $(marker push-branch)"
+		fi
+		if [[ $(marker push-default) == rejected ]]; then
+			pass INV-9 "implementer: pushing to the default branch is rejected"
+		else
+			fail INV-9 "implementer: pushing to the default branch is rejected" \
+				"push: $(marker push-default). If it was accepted, revert that commit on the default branch now."
+		fi
+	fi
+	inv15_gone() {
+		local left
+		left=$(docker ps -aq --filter "name=^$project$")$(docker volume ls -q --filter "name=^${project}_")
+		[[ -z $left ]] || {
+			echo "left behind: $(docker volume ls -q --filter "name=^${project}_") $(docker ps -a --filter "name=^$project$" --format '{{.Names}}')"
+			return 1
+		}
+		[[ ! -e ${XDG_RUNTIME_DIR}/sandbox/${project#sandbox-task-} ]] || {
+			echo "token directory left behind"
+			return 1
+		}
+	}
+	check INV-15 "$role: container, volumes and token files are removed on exit" inv15_gone
+	if grep -qx 'task: token revoked' <<<"$out"; then
+		pass INV-7 "$role: the token is revoked on GitHub when the task ends"
+	else
+		fail INV-7 "$role: the token is revoked on GitHub when the task ends" "$(grep 'revoke' <<<"$out")"
+	fi
+done
+
+# INV-5: the real Claude token and App keys appear nowhere in the image.
+inv5_exact() {
+	local pat=$work/patterns n
+	# Patterns come from files, never arguments. Key body lines are long
+	# enough to be unique; PEM armor lines are skipped.
+	{
+		cat "$SECRETS_DIR/claude_token"
+		grep -hv -- '-----' "$SECRETS_DIR/implementer_app_key" "$SECRETS_DIR/reviewer_app_key"
+	} | awk 'length($0) >= 40' >"$pat"
+	n=$(docker save "$DEV_IMAGE" "$EGRESS_IMAGE" | grep -caF -f "$pat")
+	rm -f "$pat"
+	[[ $n == 0 ]] || {
+		echo "$n matching lines in the saved images"
+		return 1
+	}
+}
+check INV-5 "the real Claude token and App keys appear nowhere in the images" inv5_exact
+
+# INV-15: --keep keeps volumes; a signal still cleans up.
+inv15_keep() {
+	task_script implementer 'true' --keep
+	[[ $task_status == 0 && -n $project ]] || {
+		echo "task failed: $(tail -3 "$work/out")"
+		return 1
+	}
+	local state
+	state=$(docker inspect "$project" --format '{{.State.Status}}' 2>&1)
+	docker rm -f "$project" >/dev/null 2>&1
+	docker volume rm "${project}_work" "${project}_cache" >/dev/null 2>&1 || {
+		echo "volumes were not kept"
+		return 1
+	}
+	[[ $state == exited ]] || {
+		echo "container state: $state"
+		return 1
+	}
+	[[ ! -e ${XDG_RUNTIME_DIR}/sandbox/${project#sandbox-task-} ]] || {
+		echo "token directory left behind"
+		return 1
+	}
+}
+inv15_signal() {
+	"$TASK" "$online_repo" --role implementer <<<'sleep 120' >"$work/out" 2>&1 &
+	local pid=$!
+	for _ in $(seq 60); do
+		project=$(sed -n 's/^task: \(sandbox-task-[0-9a-f-]*\): .*/\1/p' "$work/out" | head -1)
+		[[ -n $project ]] && docker ps -q --filter "name=^$project$" | grep -q . && break
+		sleep 1
+	done
+	[[ -n $project ]] || {
+		echo "task did not start: $(tail -3 "$work/out")"
+		kill "$pid" 2>/dev/null
+		return 1
+	}
+	kill -TERM "$pid"
+	for _ in $(seq 30); do
+		kill -0 "$pid" 2>/dev/null || break
+		sleep 1
+	done
+	if kill -0 "$pid" 2>/dev/null; then
+		echo "task still running 30 s after SIGTERM"
+		return 1
+	fi
+	local left
+	left=$(docker ps -aq --filter "name=^$project$")$(docker volume ls -q --filter "name=^${project}_")
+	[[ -z $left ]] || {
+		echo "left behind after SIGTERM"
+		docker rm -f "$project" >/dev/null 2>&1
+		docker volume rm "${project}_work" "${project}_cache" >/dev/null 2>&1
+		return 1
+	}
+}
+check INV-15 "--keep stops the container and keeps its volumes, but not the tokens" inv15_keep
+check INV-15 "SIGTERM to task removes the container and volumes" inv15_signal
+
+echo
+((failures)) && echo "$failures check(s) failed" || echo "All checks passed"
+exit "$failures"
