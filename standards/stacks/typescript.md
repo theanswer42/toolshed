@@ -10,7 +10,7 @@ Code is TypeScript everywhere. Node runs `.ts` files directly. Code that runs in
 | --- | --- | --- |
 | Runtime | Node 26 (Active LTS) | Version in `.node-version` and `engines` in `package.json` |
 | Packages | npm 12, pinned, with workspaces for repos with several projects | A committed `package-lock.json`. Node 26 bundles npm 11, so npm 12 is installed explicitly, see Dependencies |
-| Types | TypeScript 7 (`tsc`), plus TypeScript 6 for tools that need its API | Exact versions pinned. Separate configs for core, Node, and browser code, see Type checking |
+| Types | TypeScript 7 (`tsc`), plus TypeScript 6 for tools that need its API | Exact versions pinned. Three independent configs for core, Node, and browser code, see Type checking |
 | Node types | `@types/node` | Listed in `types` for Node code only |
 | Lint | ESLint with typescript-eslint | Type-aware rules, see Lint rules |
 | Format | Prettier | Check mode in pre-commit and CI |
@@ -83,7 +83,6 @@ package.json
 package-lock.json
 .npmrc
 .node-version
-tsconfig.json         solution file: references the three configs below
 tsconfig.base.json    shared compiler options
 tsconfig.core.json    src/core: no DOM, no Node
 tsconfig.node.json    Node code
@@ -100,8 +99,9 @@ src/
     types.ts
     errors.ts
     <feature>.ts
+  main.ts             composition root: builds clients and repos, hands them to services, starts entry points
   shell/              everything with effects
-    entry/            entry points: main.ts, HTTP routes, CLI commands
+    entry/            entry points: HTTP routes, CLI commands
     services/         one function per use case: load, call core, persist
     repos/            storage access: plain SQL in, domain types out
     clients/          external service clients
@@ -121,7 +121,13 @@ A repo with several projects uses npm workspaces. Each project has its own direc
 
 ## Type checking
 
-Node never type checks: it only strips the types. `npm run typecheck` runs `tsc -b`, which checks every project the solution file references. Each part of the code gets the globals it may use, and no others, so the type checker refuses the wrong globals before lint runs.
+Node never type checks: it only strips the types. There are three independent configs, with no project references between them. `npm run typecheck` runs them in sequence:
+
+```sh
+tsc -p tsconfig.core.json && tsc -p tsconfig.node.json && tsc -p tsconfig.browser.json
+```
+
+Each part of the code gets the globals it may use, and no others, so the type checker refuses the wrong globals before lint runs. The configs' `include`s overlap: core is checked three times, once alone for purity and once inside each program that uses it. That is fine because nothing references anything.
 
 **Shared base** (`tsconfig.base.json`, extended by the three below):
 
@@ -137,20 +143,20 @@ Node never type checks: it only strips the types. `npm run typecheck` runs `tsc 
     "verbatimModuleSyntax": true,
     "module": "nodenext",
     "target": "es2024",
-    "rewriteRelativeImportExtensions": true,
-    "composite": true
+    "rewriteRelativeImportExtensions": true
   }
 }
 ```
 
 | Config | Includes | `lib` | `types` | Emits |
 | --- | --- | --- | --- | --- |
-| `tsconfig.core.json` | `src/core` | `["es2024"]` | `[]` | No |
-| `tsconfig.node.json` | Node code and its tests | `["es2024"]` | `["node"]` | No |
-| `tsconfig.browser.json` | Browser code and the shared code it uses | `["es2024", "dom", "dom.iterable"]` | `[]` | Yes, to `dist/` |
+| `tsconfig.core.json` | `src/core` | `["es2024"]` | `[]` | No (`noEmit`) |
+| `tsconfig.node.json` | Node code and its tests, plus the core and shared source they use | `["es2024"]` | `["node"]` | No (`noEmit`) |
+| `tsconfig.browser.json` | Browser code, plus the core and shared source it uses | `["es2024", "dom", "dom.iterable"]` | `[]` | Yes, all of it, to `dist/` |
 
 - With `lib: ["es2024"]` and no types, `fetch`, `crypto`, `document`, and `process` don't exist in the core, so code that uses them doesn't compile there.
 - Node code can't reference DOM globals, and browser code can't reference Node's.
+- The browser config compiles the core and shared source it includes, so `dist/` holds their JavaScript too, not just their types.
 - `erasableSyntaxOnly` refuses TypeScript syntax that changes runtime behavior, such as enums, namespaces, and parameter properties. That is what lets Node run the files directly, and it keeps compiled browser code identical to the source apart from types.
 - Imports use the `.ts` extension. `rewriteRelativeImportExtensions` turns them into `.js` in browser output.
 - `any` is banned, including implicit `any` from untyped values. A suppression names its rule and gives a reason.
@@ -165,7 +171,7 @@ Node never type checks: it only strips the types. `npm run typecheck` runs `tsc 
 }
 ```
 
-The `typecheck` script calls TypeScript 7's `tsc` explicitly. Remove the aliases once the tools support TypeScript 7's API. Confirm the current state at project setup.
+The `typecheck` script calls TypeScript 7's `tsc` explicitly, for all three configs. Remove the aliases once the tools support TypeScript 7's API. Confirm the current state at project setup.
 
 ## Lint rules
 
@@ -185,13 +191,14 @@ Dependencies point inward. `eslint-plugin-boundaries` defines each folder below 
 
 | From | May import |
 | --- | --- |
+| `main.ts` | everything in `shell`, `core` |
 | `shell/entry` | `shell/services`, `core` |
 | `shell/services` | `shell/repos`, `shell/clients`, `core` |
 | `shell/repos` | `core` |
 | `shell/clients` | `core` |
 | `core` | `core` |
 
-Read-only entry points may also import `shell/repos`, as in the Python stack; writes always go through a service.
+`main.ts` is the composition root, outside the layers like `app.py` in the Python stack: it constructs clients and repos and hands them to services. Nothing imports it. Read-only entry points may also import `shell/repos`, as in the Python stack; writes always go through a service.
 
 For files in `src/core/`, lint adds a second layer to the type checker:
 
@@ -230,7 +237,7 @@ With no bundler, the browser resolves imports itself.
 </script>
 ```
 
-- Shared workspace packages used in the browser are compiled into `dist/` by `tsconfig.browser.json`, through project references.
+- Shared workspace packages used in the browser are compiled into `dist/` by `tsconfig.browser.json`, which includes their source.
 - Runtime dependencies are copied from `node_modules` into `vendor/` by a committed script, so the page serves exactly the locked version. A dependency must ship ES modules to be usable this way.
 - A test fails if any bare specifier in `dist/` has no entry in the import map, or an entry points at a missing file.
 
@@ -266,7 +273,7 @@ These implement `topics/sqlite.md` with `node:sqlite`.
 
 **No network in the test suite.** Unlike pytest-socket in the Python stack, nothing here blocks the network at the socket level. The block is layered instead:
 
-- `tests/setup.ts` replaces `globalThis.fetch`, `WebSocket`, `http.request`, `https.request`, and `net.connect` with functions that throw. Browser-mode tests get a setup file that replaces `fetch` and `WebSocket` the same way.
+- `tests/setup.ts` replaces these with functions that throw: `globalThis.fetch` and `WebSocket`; `request` and `get` in `node:http` and `node:https`; `connect` and `createConnection` in `node:net`; and `connect` in `node:tls`. It then calls `syncBuiltinESMExports()` from `node:module`, so modules that use named imports, such as `import { request } from "node:http"`, see the stubs too. Browser-mode tests get a setup file that replaces `fetch` and `WebSocket` the same way.
 - Lint bans importing `node:http`, `node:https`, `node:net`, and `node:tls` in test files, except under `tests/smoke/`.
 - Code under test reaches the network only through injected clients, so a test that forgets to inject one fails on the stub.
 
@@ -276,10 +283,16 @@ A small `log` module in the shell writes the JSON-line format from `project-type
 
 ## Shutdown
 
-Node running as PID 1 in a container ignores SIGTERM unless the code handles it. `service.md` requires a clean shutdown, so `main.ts` installs a handler:
+Node running as PID 1 in a container ignores SIGTERM unless the code handles it. `service.md` requires a clean shutdown, so `main.ts` installs a handler. `server.close()` waits for in-flight responses, and a long download can outlast the container's stop timeout, so a fallback timer forces the shutdown and makes it visible:
 
 ```ts
 process.on("SIGTERM", () => {
+  const force = setTimeout(() => {
+    log.warn("shutdown.forced");
+    server.closeAllConnections();
+    process.exit(1);
+  }, 5_000);
+  force.unref();
   server.close(() => {
     db.close();
     process.exit(0);
@@ -287,7 +300,7 @@ process.on("SIGTERM", () => {
 });
 ```
 
-A smoke test stops the running container and fails unless it exits within a few seconds.
+Keep the fallback shorter than the stop timeout the runner uses. A smoke test stops the running container and fails unless it exits within a few seconds.
 
 ## Container image
 
@@ -307,7 +320,7 @@ RUN mkdir /data && chown node:node /data
 USER node
 EXPOSE 8000
 HEALTHCHECK CMD ["node", "-e", "fetch('http://127.0.0.1:8000/health').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
-CMD ["node", "src/shell/entry/main.ts"]
+CMD ["node", "src/main.ts"]
 ```
 
 **A project in a workspace** is built from the repo root, so the image gets the root lockfile and the shared packages it depends on:
@@ -328,7 +341,7 @@ USER node
 WORKDIR /app/<project>
 EXPOSE 8000
 HEALTHCHECK CMD ["node", "-e", "fetch('http://127.0.0.1:8000/health').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
-CMD ["node", "src/shell/entry/main.ts"]
+CMD ["node", "src/main.ts"]
 ```
 
 - The image uses the built-in non-root `node` user.
@@ -374,7 +387,7 @@ A single `npm run check` script runs the first four. None of them need the netwo
 | --- | --- | --- |
 | Lint | `npm run lint` | Every change |
 | Format | `npm run format:check` | Every change |
-| Types | `npm run typecheck` (`tsc -b`) | Every change |
+| Types | `npm run typecheck` (`tsc` on each of the three configs) | Every change |
 | Tests | `npm test` (Vitest, Node and browser) | Every change |
 | Mutation | `npm run mutate` (Stryker) | Any change under `src/core/` |
 | Audit | `npm audit --audit-level=high` | Every change, in CI |
