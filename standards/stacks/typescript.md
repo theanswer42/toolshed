@@ -2,18 +2,19 @@
 
 These are the defaults for every TypeScript project, on Node and in the browser. They apply in addition to `core.md` and the project type and topic documents the project spec lists. A project departs from them only through a deviation recorded in its project spec.
 
-Code is TypeScript everywhere. Node runs `.ts` files directly. Code that runs in the browser is compiled by `tsc` alone into plain ES modules, which the browser loads as they are. There is no bundler.
+Code is TypeScript everywhere. Node runs `.ts` files directly. Code that runs in the browser is compiled by `tsc` alone into plain ES modules, which the browser loads through an import map. There is no bundler.
 
 ## Default stack
 
 | Concern | Default | Notes |
 | --- | --- | --- |
 | Runtime | Node 26 (Active LTS) | Version in `.node-version` and `engines` in `package.json` |
-| Packages | npm, with workspaces for repos with several projects | A committed `package-lock.json`. Supply-chain settings in `.npmrc`, see Dependencies |
-| Types | TypeScript 7 (`tsc`) | Exact version pinned. Strict settings in `tsconfig.json`, see Type checking |
+| Packages | npm 12, pinned, with workspaces for repos with several projects | A committed `package-lock.json`. Node 26 bundles npm 11, so npm 12 is installed explicitly, see Dependencies |
+| Types | TypeScript 7 (`tsc`), plus TypeScript 6 for tools that need its API | Exact versions pinned. Separate configs for core, Node, and browser code, see Type checking |
+| Node types | `@types/node` | Listed in `types` for Node code only |
 | Lint | ESLint with typescript-eslint | Type-aware rules, see Lint rules |
 | Format | Prettier | Check mode in pre-commit and CI |
-| Import rules | ESLint: `eslint-plugin-boundaries` and restricted imports and globals | See Import rules |
+| Import rules | ESLint: `eslint-plugin-boundaries` and restricted imports and globals | Backed by the type checker, see Import rules |
 | Tests | Vitest | Node tests, plus browser mode for code that runs in the browser |
 | Properties | fast-check | With Vitest |
 | Mutation testing | StrykerJS with the Vitest runner and the TypeScript checker | Scoped to `core` |
@@ -38,7 +39,22 @@ Every dependency is code the agent didn't write and nobody reviewed. These rules
 - **A new runtime dependency needs a reason in the project spec**: what it does that would be costly or risky to write, and roughly how many packages it pulls in. Dev-only tools from the table above need none.
 - **No bundler** unless the project spec records why one is needed.
 - **The change report lists every new or upgraded dependency**, as `core.md` requires. A reviewer treats a new runtime dependency as at least T2.
-- **`.npmrc` holds the supply-chain settings:**
+
+**npm version.** The supply-chain defaults below depend on npm 12: it blocks dependency install scripts and git dependencies unless they are allowed. Node 26 still bundles npm 11, so the project pins npm 12 and installs exactly that version wherever it runs:
+
+```jsonc
+// package.json
+{
+  "engines": { "node": "26.x", "npm": "12.x" },
+  "devEngines": {
+    "packageManager": { "name": "npm", "version": "<exact 12.x>", "onFail": "error" }
+  }
+}
+```
+
+The image and CI run `npm install -g npm@<the same exact version>` before `npm ci`.
+
+**`.npmrc`:**
 
 ```ini
 ignore-scripts=true
@@ -47,11 +63,13 @@ allow-git=none
 engine-strict=true
 ```
 
-Confirm each setting against the npm version in use at project setup.
-
-- `ignore-scripts=true` means dependency install scripts never run. A package that needs one is a reason to choose a different package, or a recorded deviation.
+- `ignore-scripts=true` keeps dependency install scripts off even if a future default changes. A package that needs one is a reason to choose a different package, or a recorded deviation.
 - `min-release-age=3` refuses versions published less than three days ago, so a compromised release is usually caught and pulled before it can be installed.
-- Undeclared imports are caught by lint (`import-x/no-extraneous-dependencies`). npm allows importing a package that only arrived as a dependency of another one; the rule refuses it.
+- `engine-strict=true` makes the `engines` versions binding.
+
+Confirm each setting against the pinned npm version at project setup.
+
+**Undeclared imports** are caught by lint (`import-x/no-extraneous-dependencies`). npm allows importing a package that only arrived as a dependency of another one; the rule refuses it.
 
 ## Layout
 
@@ -65,8 +83,11 @@ package.json
 package-lock.json
 .npmrc
 .node-version
-tsconfig.json         type checking for all code
-tsconfig.browser.json emit for code that runs in the browser
+tsconfig.json         solution file: references the three configs below
+tsconfig.base.json    shared compiler options
+tsconfig.core.json    src/core: no DOM, no Node
+tsconfig.node.json    Node code
+tsconfig.browser.json browser code, emits to dist/
 eslint.config.js
 .prettierrc.json
 vitest.config.ts
@@ -79,13 +100,14 @@ src/
     types.ts
     errors.ts
     <feature>.ts
-  shell/              everything with effects, one folder per kind
+  shell/              everything with effects
+    entry/            entry points: main.ts, HTTP routes, CLI commands
+    services/         one function per use case: load, call core, persist
     repos/            storage access: plain SQL in, domain types out
     clients/          external service clients
-    services/         one function per use case: load, call core, persist
   config.ts
-  main.ts             entry point
 tests/
+  setup.ts            network stubs, see Testing
   strategies.ts       fast-check arbitraries that build domain types
   properties/         property tests, named by invariant ID
   models/             reference models
@@ -99,7 +121,9 @@ A repo with several projects uses npm workspaces. Each project has its own direc
 
 ## Type checking
 
-`tsc` runs with `--noEmit` for all code. Node never type checks: it only strips the types.
+Node never type checks: it only strips the types. `npm run typecheck` runs `tsc -b`, which checks every project the solution file references. Each part of the code gets the globals it may use, and no others, so the type checker refuses the wrong globals before lint runs.
+
+**Shared base** (`tsconfig.base.json`, extended by the three below):
 
 ```jsonc
 {
@@ -114,16 +138,34 @@ A repo with several projects uses npm workspaces. Each project has its own direc
     "module": "nodenext",
     "target": "es2024",
     "rewriteRelativeImportExtensions": true,
-    "noEmit": true
+    "composite": true
   }
 }
 ```
 
+| Config | Includes | `lib` | `types` | Emits |
+| --- | --- | --- | --- | --- |
+| `tsconfig.core.json` | `src/core` | `["es2024"]` | `[]` | No |
+| `tsconfig.node.json` | Node code and its tests | `["es2024"]` | `["node"]` | No |
+| `tsconfig.browser.json` | Browser code and the shared code it uses | `["es2024", "dom", "dom.iterable"]` | `[]` | Yes, to `dist/` |
+
+- With `lib: ["es2024"]` and no types, `fetch`, `crypto`, `document`, and `process` don't exist in the core, so code that uses them doesn't compile there.
+- Node code can't reference DOM globals, and browser code can't reference Node's.
 - `erasableSyntaxOnly` refuses TypeScript syntax that changes runtime behavior, such as enums, namespaces, and parameter properties. That is what lets Node run the files directly, and it keeps compiled browser code identical to the source apart from types.
 - Imports use the `.ts` extension. `rewriteRelativeImportExtensions` turns them into `.js` in browser output.
-- `tsconfig.browser.json` extends this file, sets `noEmit: false`, `outDir: "dist"`, and `lib` to the DOM libraries, and includes only browser and shared code.
-- **TypeScript 7 and tools that need the compiler API.** TypeScript 7.0 has no full programmatic API. A tool that needs one, such as typescript-eslint or Stryker's TypeScript checker, gets TypeScript 6 installed alongside under an npm alias, for that tool alone. Drop the alias once the tool supports TypeScript 7. Confirm the current state at project setup.
-- `any` is banned in the core, including implicit `any` from untyped values. A suppression names its rule and gives a reason.
+- `any` is banned, including implicit `any` from untyped values. A suppression names its rule and gives a reason.
+
+**TypeScript 7 and tools that need the compiler API.** TypeScript 7.0 has no full programmatic API. Tools that need one, such as typescript-eslint and Stryker's TypeScript checker, import the bare `typescript` package. So `typescript` resolves to TypeScript 6, and TypeScript 7 is installed under its own name for `tsc`:
+
+```jsonc
+// package.json, devDependencies
+{
+  "typescript": "npm:@typescript/typescript6@<exact 6.x>",
+  "@typescript/native": "npm:typescript@<exact 7.x>"
+}
+```
+
+The `typecheck` script calls TypeScript 7's `tsc` explicitly. Remove the aliases once the tools support TypeScript 7's API. Confirm the current state at project setup.
 
 ## Lint rules
 
@@ -139,14 +181,25 @@ Prettier owns formatting. ESLint runs no formatting rules.
 
 ## Import rules
 
-Dependencies point inward: `shell` may import `core`; `core` imports only itself.
+Dependencies point inward. `eslint-plugin-boundaries` defines each folder below as an element and allows only these imports:
 
-- `eslint-plugin-boundaries` defines `core` and `shell` as elements and allows only `shell → core`.
-- For files in `src/core/`:
-  - `no-restricted-imports` bans every `node:` module and every package except those the project spec names as pure.
-  - `no-restricted-globals` bans `fetch`, `crypto`, `localStorage`, `indexedDB`, `navigator`, `window`, `document`, and `process`.
-  - `no-restricted-syntax` bans `Date.now()`, `new Date()` with no arguments, and `Math.random()`. Time and randomness arrive as arguments.
-- When first setting up a project, confirm each rule fails on a deliberate violation.
+| From | May import |
+| --- | --- |
+| `shell/entry` | `shell/services`, `core` |
+| `shell/services` | `shell/repos`, `shell/clients`, `core` |
+| `shell/repos` | `core` |
+| `shell/clients` | `core` |
+| `core` | `core` |
+
+Read-only entry points may also import `shell/repos`, as in the Python stack; writes always go through a service.
+
+For files in `src/core/`, lint adds a second layer to the type checker:
+
+- `no-restricted-imports` bans every `node:` module and every package except those the project spec names as pure.
+- `no-restricted-globals` bans `globalThis`, `self`, `fetch`, `crypto`, `localStorage`, `indexedDB`, `navigator`, `window`, `document`, and `process`. Banning `globalThis` and `self` closes the `globalThis.fetch(...)` route around the others.
+- `no-restricted-syntax` bans `Date.now()`, `new Date()` with no arguments, and `Math.random()`. These exist in the ES libraries, so only lint catches them. Time and randomness arrive as arguments.
+
+When first setting up a project, confirm each rule, and each tsconfig's globals, fails on a deliberate violation.
 
 ## Core conventions
 
@@ -159,6 +212,28 @@ Dependencies point inward: `shell` may import `core`; `core` imports only itself
 - Expected domain failures throw a subclass of one `DomainError` in `core/errors.ts`.
 - Input is parsed into domain types at the boundary by hand-written parsers, tested with fast-check. A validation library needs a reason in the project spec.
 
+## Browser modules
+
+With no bundler, the browser resolves imports itself.
+
+- Relative imports work as they are: `tsc` emits `.js` files with `.js` import paths.
+- Bare imports, such as a shared workspace package or a runtime dependency, are mapped by an import map in the page's HTML:
+
+```html
+<script type="importmap">
+  {
+    "imports": {
+      "@music/format": "/dist/format/index.js",
+      "sqlite-wasm": "/vendor/sqlite-wasm/index.mjs"
+    }
+  }
+</script>
+```
+
+- Shared workspace packages used in the browser are compiled into `dist/` by `tsconfig.browser.json`, through project references.
+- Runtime dependencies are copied from `node_modules` into `vendor/` by a committed script, so the page serves exactly the locked version. A dependency must ship ES modules to be usable this way.
+- A test fails if any bare specifier in `dist/` has no entry in the import map, or an entry points at a missing file.
+
 ## Configuration and secrets
 
 `src/config.ts` implements the configuration rules in `project-types/service.md` and returns a frozen settings object. Secret values are wrapped in a `Secret` class whose `toString`, `toJSON`, and `[Symbol.for("nodejs.util.inspect.custom")]` all return `***`. Code calls `.reveal()` only at the point of use.
@@ -169,7 +244,7 @@ These implement the rules in `core.md`.
 
 - Clients live in `src/shell/clients/` and use the built-in `fetch`.
 - Every request passes an `AbortSignal.timeout(...)`. Retries are bounded and written in the project.
-- A Vitest setup file replaces `globalThis.fetch` with a function that throws, so a test that reaches the network fails. Clients are tested by injecting a recorded response from `tests/fixtures/<service>/`.
+- Clients are tested by injecting a recorded response from `tests/fixtures/<service>/`.
 
 ## SQLite
 
@@ -189,16 +264,40 @@ These implement `topics/sqlite.md` with `node:sqlite`.
 - **SQLite.** Repository and schema tests follow `topics/sqlite.md`.
 - **Mutation.** Run Stryker over `src/core` whenever the core changes. T1 modules need every survivor killed or justified. T2 modules report the score.
 
+**No network in the test suite.** Unlike pytest-socket in the Python stack, nothing here blocks the network at the socket level. The block is layered instead:
+
+- `tests/setup.ts` replaces `globalThis.fetch`, `WebSocket`, `http.request`, `https.request`, and `net.connect` with functions that throw. Browser-mode tests get a setup file that replaces `fetch` and `WebSocket` the same way.
+- Lint bans importing `node:http`, `node:https`, `node:net`, and `node:tls` in test files, except under `tests/smoke/`.
+- Code under test reaches the network only through injected clients, so a test that forgets to inject one fails on the stub.
+
 ## Logging
 
 A small `log` module in the shell writes the JSON-line format from `project-types/service.md` to stdout through `console.log`. No logging library.
+
+## Shutdown
+
+Node running as PID 1 in a container ignores SIGTERM unless the code handles it. `service.md` requires a clean shutdown, so `main.ts` installs a handler:
+
+```ts
+process.on("SIGTERM", () => {
+  server.close(() => {
+    db.close();
+    process.exit(0);
+  });
+});
+```
+
+A smoke test stops the running container and fails unless it exits within a few seconds.
 
 ## Container image
 
 This implements the container contract in `project-types/service.md`. The image runs TypeScript directly, so there is no build stage for Node code.
 
+**A single project:**
+
 ```dockerfile
 FROM node:26-slim@sha256:<digest>
+RUN npm install -g npm@<exact 12.x>
 WORKDIR /app
 ENV NODE_ENV=production DATA_DIR=/data
 COPY package.json package-lock.json .npmrc ./
@@ -208,12 +307,33 @@ RUN mkdir /data && chown node:node /data
 USER node
 EXPOSE 8000
 HEALTHCHECK CMD ["node", "-e", "fetch('http://127.0.0.1:8000/health').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
-CMD ["node", "src/main.ts"]
+CMD ["node", "src/shell/entry/main.ts"]
+```
+
+**A project in a workspace** is built from the repo root, so the image gets the root lockfile and the shared packages it depends on:
+
+```dockerfile
+FROM node:26-slim@sha256:<digest>
+RUN npm install -g npm@<exact 12.x>
+WORKDIR /app
+ENV NODE_ENV=production DATA_DIR=/data
+COPY package.json package-lock.json .npmrc ./
+COPY <shared>/package.json ./<shared>/
+COPY <project>/package.json ./<project>/
+RUN npm ci --omit=dev -w <project>
+COPY <shared>/src ./<shared>/src
+COPY <project>/src ./<project>/src
+RUN mkdir /data && chown node:node /data
+USER node
+WORKDIR /app/<project>
+EXPOSE 8000
+HEALTHCHECK CMD ["node", "-e", "fetch('http://127.0.0.1:8000/health').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+CMD ["node", "src/shell/entry/main.ts"]
 ```
 
 - The image uses the built-in non-root `node` user.
 - `.dockerignore` also excludes `node_modules` and `dist`.
-- Node does not strip types inside `node_modules`, so a workspace dependency on shared TypeScript code is copied in as source, not installed as a package. The project spec records how.
+- Node does not strip types inside `node_modules`. Workspace packages are linked into `node_modules` as symlinks, which Node resolves to their real path outside it, so shared TypeScript code runs in both development and the image. Confirm this at project setup, and keep the shared package's source outside `node_modules`.
 
 ## Documentation
 
@@ -222,7 +342,7 @@ CMD ["node", "src/main.ts"]
 
 ## Pre-commit hooks
 
-These are added to the betterleaks hook from `core.md`. They run the project's own npm scripts, so tool versions come from `package-lock.json` and match CI exactly.
+These are added to the betterleaks hook from `core.md`. They run the project's own npm scripts, so tool versions come from `package-lock.json` and match CI exactly. Never use `npx` for these: it downloads a package that isn't installed locally.
 
 ```yaml
   - repo: local
@@ -234,7 +354,7 @@ These are added to the betterleaks hook from `core.md`. They run the project's o
         types_or: [ts, javascript]
       - id: prettier
         name: prettier
-        entry: npx prettier --check
+        entry: npm run --silent format:check --
         language: system
         types_or: [ts, javascript, json, yaml, markdown, css, html]
       - id: tsc
@@ -244,20 +364,20 @@ These are added to the betterleaks hook from `core.md`. They run the project's o
         pass_filenames: false
 ```
 
-- **CI.** CI runs `npm ci`, then `pre-commit run --all-files`.
+- **CI.** CI installs the pinned npm, runs `npm ci`, then `pre-commit run --all-files`.
 
 ## Required checks
 
-A single `npm run check` script runs the first five. The change report lists the result of each.
+A single `npm run check` script runs the first four. None of them need the network. The change report lists the result of each check that ran.
 
 | Check | Command | When |
 | --- | --- | --- |
 | Lint | `npm run lint` | Every change |
-| Format | `npx prettier --check .` | Every change |
-| Types | `npm run typecheck` (`tsc --noEmit`) | Every change |
+| Format | `npm run format:check` | Every change |
+| Types | `npm run typecheck` (`tsc -b`) | Every change |
 | Tests | `npm test` (Vitest, Node and browser) | Every change |
-| Audit | `npm audit --audit-level=high` | Every change |
-| Mutation | `npx stryker run` | Any change under `src/core/` |
+| Mutation | `npm run mutate` (Stryker) | Any change under `src/core/` |
+| Audit | `npm audit --audit-level=high` | Every change, in CI |
 | Secrets | betterleaks hook, then a scan of the PR's commits in CI | Every commit |
-| End-to-end | `npx playwright test` | Browser apps, every change |
+| End-to-end | `npm run e2e` (Playwright) | Browser apps, every change |
 | Image | `docker build`, then the smoke tests against the running container | Services, every change, in CI |
