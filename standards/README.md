@@ -15,12 +15,12 @@ The project spec records any deviation from these documents, with its reason.
 | [`topics/sqlite.md`](topics/sqlite.md) | SQLite schema, repositories, transactions, migrations, and their tests |
 | [`stacks/python.md`](stacks/python.md) | Python defaults: uv, ruff, ty, pytest and Hypothesis, mutmut, import-linter, Flask, the container image |
 | [`stacks/shell.md`](stacks/shell.md) | Shell defaults: bash, shellcheck, shfmt, `verify` and mutation scripts |
+| [`stacks/typescript.md`](stacks/typescript.md) | TypeScript defaults for Node and the browser: npm, `tsc`, ESLint, Prettier, Vitest and fast-check, StrykerJS, no bundler, strict dependency rules |
 
 ## Planned
 
 Tracked in #11:
 
-- `stacks/typescript.md`, for Node and the browser
 - `project-types/browser-app.md`, `project-types/local-tool.md`, `project-types/library.md`
 - `topics/data-formats.md`
 - SQLite databases that are built offline and shipped as files, a stateless server, and monorepos with one project spec per project
